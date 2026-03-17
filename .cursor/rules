@@ -1,0 +1,69 @@
+# Ária — App de Gestão Pessoal
+
+## Sobre o Produto
+- Nome: Ária
+- Descrição: App de gestão pessoal e produtividade com foco em clareza financeira e organização para pessoas neurodivergentes (TDAH, TAG, espectro autista)
+- Público: Casal + testador (3 usuários fixos no MVP)
+- Fase atual: MVP v0
+
+## Stack Técnica
+- Framework: React Native com Expo (suporte web + mobile simultâneo)
+- UI Library: Tamagui (componentes, theming, tokens)
+- Backend: Supabase (auth, PostgreSQL, realtime, storage)
+- Hospedagem web: Vercel
+- Mobile: Expo Go (dev) / EAS Build (distribuição)
+- Linguagem: TypeScript (sempre tipado)
+- Gerenciador de pacotes: npm
+
+## Convenções de Código
+- Sempre TypeScript, nunca JavaScript puro
+- Componentes em PascalCase: TransactionCard.tsx
+- Hooks customizados com prefixo use: useTransactions.ts
+- Serviços Supabase em /services: transactionService.ts
+- Tipos e interfaces em /types: transaction.ts
+- Evitar lógica de negócio dentro de componentes — usar hooks e services
+- Comentários em português quando necessário
+
+## Estrutura de Pastas
+aria-app/
+├── app/              # Rotas (Expo Router)
+├── components/       # Componentes reutilizáveis
+├── hooks/            # Custom hooks
+├── services/         # Integração com Supabase
+├── types/            # Interfaces e tipos TypeScript
+├── constants/        # Cores, tokens, config
+└── utils/            # Funções utilitárias
+
+## Design
+- Estilo: Minimalismo com cor funcional (cor = sinal, não decoração)
+- Tipografia: Inter ou Plus Jakarta Sans
+- Modo escuro: nativo desde o início via Tamagui
+- Feedback visual: big numbers, tags com avatar do usuário responsável
+- Verde = receita/positivo | Vermelho = despesa/alerta | Amarelo = vencimento próximo
+
+## Módulos do MVP v0
+1. Auth (login com email/senha via Supabase)
+2. Dashboard (saldo atual, total a pagar, próximos vencimentos)
+3. Transações (entrada/saída, categoria, responsável, parcelamento)
+4. Contas a pagar (com parcelas e vencimento)
+5. Projeção básica de saldo futuro
+6. To-do simples com recorrência
+7. Metas simples (nome, prazo, progress bar)
+8. Configurações por usuário (tema, visibilidade de módulos)
+
+## Usuários MVP (fixos)
+- user_1: Dono (você)
+- user_2: Co-dona (namorada)
+- user_3: Testador beta
+
+## Supabase
+- Usar Row Level Security (RLS) em todas as tabelas
+- Dados financeiros sempre filtrados por user_id ou shared (casal)
+- Nunca expor a service_role key no frontend — usar apenas anon key
+
+## NÃO implementar no MVP v0
+- Open Finance / sincronização bancária automática
+- Micro-animações complexas (fase 2)
+- Sistema de convite de usuários
+- Módulo de investimentos
+- Notificações push
