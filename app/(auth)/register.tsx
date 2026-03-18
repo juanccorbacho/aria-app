@@ -35,7 +35,7 @@ export default function RegisterScreen() {
 
     try {
       await register(email.trim(), password);
-      router.replace('/(tabs)');
+      router.replace('/dashboard');
     } catch {
       Alert.alert('Erro ao criar conta', 'Tente novamente em alguns instantes.');
     }

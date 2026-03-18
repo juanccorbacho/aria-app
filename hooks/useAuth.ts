@@ -80,6 +80,7 @@ export const useAuth = (): UseAuthReturn => {
         isLoading: false,
         errorMessage: error instanceof Error ? error.message : 'Erro ao fazer login.',
       }));
+      throw error;
     }
   };
 
@@ -101,6 +102,7 @@ export const useAuth = (): UseAuthReturn => {
         isLoading: false,
         errorMessage: error instanceof Error ? error.message : 'Erro ao cadastrar usuário.',
       }));
+      throw error;
     }
   };
 

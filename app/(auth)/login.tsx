@@ -24,7 +24,7 @@ export default function LoginScreen() {
 
     try {
       await login(email.trim(), password);
-      router.replace('/(tabs)');
+      router.replace('/dashboard');
     } catch {
       // O erro já é tratado no hook, mostramos apenas um alerta genérico aqui.
       Alert.alert('Erro ao entrar', 'Verifique seus dados e tente novamente.');
