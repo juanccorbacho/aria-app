@@ -7,14 +7,14 @@ export type Profile = {
   updatedAt: string | null;
 };
 
-export type TransactionType = 'entrada' | 'saida';
+export type TransactionType = "entrada" | "saida";
 
-export type BillUrgency = 'alto' | 'medio';
+export type BillUrgency = "alto" | "medio" | "baixo";
 
 export type Transaction = {
   id: string;
   userId: string;
-  title: string;
+  description: string;
   category: string | null;
   amountCents: number;
   type: TransactionType;
@@ -25,12 +25,20 @@ export type Transaction = {
 export type Bill = {
   id: string;
   userId: string;
-  name: string;
+  description: string;
   amountCents: number;
   dueDate: string;
-  isPaid: boolean;
+  paid: boolean;
+  recurring: boolean;
   urgency: BillUrgency;
   createdAt: string;
-  paidAt: string | null;
 };
 
+export type Task = {
+  id: string;
+  userId: string;
+  title: string;
+  completed: boolean;
+  dueDate: string | null;
+  createdAt: string;
+};
