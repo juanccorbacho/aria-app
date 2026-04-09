@@ -4,18 +4,15 @@ import {
     Alert,
     Pressable,
     ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { XStack, YStack, Button, Card, Input } from "tamagui";
 
-import { Colors } from "@/constants/theme";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { useTasks } from "@/hooks/useTasks";
 import type { Task } from "@/types/models";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 
 const formatDateBR = (isoDate: string): string => {
   const [year, month, day] = isoDate.split("-").map((chunk) => Number(chunk));
@@ -188,361 +185,129 @@ export default function TasksScreen(): React.JSX.Element {
 
   if (isLoading) {
     return (
-      <View style={styles.screen}>
-        <ActivityIndicator size="large" color="#FFFFFF" />
-      </View>
+      <ThemedView f={1} ai="center" jc="center">
+        <ActivityIndicator size="large" color="#000000" />
+      </ThemedView>
     );
   }
 
   if (errorMessage) {
     return (
-      <View style={styles.screen}>
-        <Text style={styles.errorText}>{errorMessage}</Text>
-      </View>
+      <ThemedView f={1} ai="center" jc="center">
+        <ThemedText color="$danger">{errorMessage}</ThemedText>
+      </ThemedView>
     );
   }
 
   return (
-    <View style={styles.screen}>
+    <ThemedView f={1}>
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 28 }}
       >
-        <View
-          style={[
-            styles.wrapper,
-            isDesktop ? styles.wrapperDesktop : styles.wrapperMobile,
-          ]}
-        >
-          <View style={styles.headerRow}>
-            <View style={styles.header}>
-              <Text style={styles.title}>Tarefas</Text>
-              <Text style={styles.subtitle}>
-                Organize o que precisa ser feito este mes.
-              </Text>
-            </View>
+        <YStack gap="$5" w="100%" maxWidth={isDesktop ? "100%" : 720} als="center">
+          
+          <XStack ai="center" jc="space-between" gap="$4">
+            <YStack gap="$1">
+              <ThemedText type="title" fontSize="$7">Tarefas</ThemedText>
+              <ThemedText type="default" o={0.6}>Organize o que precisa ser feito este mês.</ThemedText>
+            </YStack>
             {isDesktop && !showForm ? (
-              <TouchableOpacity
-                accessibilityRole="button"
-                onPress={() => setShowForm(true)}
-                style={styles.primaryButton}
-              >
-                <Text style={styles.primaryButtonText}>Nova tarefa</Text>
-              </TouchableOpacity>
+              <Button onPress={() => setShowForm(true)} bg="$buttonBg" color="$buttonColor" br="$pill">
+                Nova tarefa
+              </Button>
             ) : null}
-          </View>
+          </XStack>
 
-          {showForm ? (
-            <View style={styles.inputCard}>
-              <TextInput
+          {showForm && (
+            <Card bg="$cardBackground" br="$comfortable" p="$5" bw={1} bc="$cardBorder" gap="$4">
+              <Input
                 value={title}
                 onChangeText={setTitle}
                 placeholder="Nova tarefa"
-                placeholderTextColor="#6E6E6E"
-                style={styles.input}
                 onSubmitEditing={handleAddTask}
                 returnKeyType="done"
+                bg="transparent"
+                color="$color"
+                br="$comfortable"
+                bw={1}
+                borderColor="$cardBorder"
               />
-              <TextInput
+
+              <Input
                 value={dueDate}
                 onChangeText={(value) => setDueDate(formatDueDateInput(value))}
                 placeholder="Vencimento (YYYY-MM-DD)"
-                placeholderTextColor="#6E6E6E"
-                style={styles.input}
                 autoCapitalize="none"
                 autoCorrect={false}
                 maxLength={10}
                 keyboardType="numbers-and-punctuation"
+                bg="transparent"
+                color="$color"
+                br="$comfortable"
+                bw={1}
+                borderColor="$cardBorder"
               />
-              {dueDateError ? (
-                <Text style={styles.inputError}>{dueDateError}</Text>
-              ) : null}
-              <View style={styles.formActions}>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  onPress={handleAddTask}
-                  disabled={!canAdd || isSubmitting}
-                  style={[
-                    styles.addButton,
-                    !canAdd && styles.addButtonDisabled,
-                  ]}
-                >
-                  <Text style={styles.addButtonText}>Adicionar tarefa</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  onPress={handleCancel}
-                  style={styles.secondaryButton}
-                >
-                  <Text style={styles.secondaryButtonText}>Cancelar</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : null}
+              {dueDateError && <ThemedText color="$danger" fontSize={12}>{dueDateError}</ThemedText>}
 
-          <View style={styles.listCard}>
+              <YStack gap="$3" mt="$3">
+                <Button onPress={handleAddTask} disabled={!canAdd || isSubmitting} opacity={(!canAdd || isSubmitting) ? 0.5 : 1} bg="$success" br="$comfortable" color="$pureBlack">
+                  Adicionar tarefa
+                </Button>
+                <Button onPress={handleCancel} bg="transparent" br="$comfortable" bw={1} borderColor="$cardBorder">
+                  Cancelar
+                </Button>
+              </YStack>
+            </Card>
+          )}
+
+          <Card bg="$cardBackground" br="$comfortable" px="$4" py="$2" bw={1} bc="$cardBorder">
             {orderedTasks.length === 0 ? (
-              <Text style={styles.emptyText}>Sem tarefas por aqui.</Text>
+              <ThemedText ta="center" py="$5" o={0.6}>Sem tarefas por aqui.</ThemedText>
             ) : (
-              orderedTasks.map((task) => (
-                <View key={task.id} style={styles.taskRow}>
+              orderedTasks.map((task, index) => (
+                <XStack key={task.id} ai="center" gap="$4" py="$4" borderBottomWidth={index === orderedTasks.length - 1 ? 0 : 1} borderBottomColor="$cardBorder">
                   <Pressable
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked: task.completed }}
                     onPress={() => handleToggle(task)}
-                    style={[
-                      styles.checkbox,
-                      task.completed && styles.checkboxChecked,
-                    ]}
+                    style={{ width: 24, height: 24, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center', borderColor: task.completed ? '#2EEA8A' : '#3A3A3A', backgroundColor: task.completed ? '#2EEA8A' : 'transparent' }}
                   >
-                    {task.completed ? (
-                      <Text style={styles.checkboxMark}>✓</Text>
-                    ) : null}
+                    {task.completed && <Text style={{ color: '#000', fontWeight: 'bold' }}>✓</Text>}
                   </Pressable>
 
-                  <View style={styles.taskBody}>
-                    <Text
-                      style={[
-                        styles.taskTitle,
-                        task.completed && styles.taskTitleDone,
-                      ]}
-                    >
+                  <YStack f={1} gap="$1">
+                    <ThemedText type="defaultSemiBold" textDecorationLine={task.completed ? "line-through" : "none"} o={task.completed ? 0.6 : 1}>
                       {task.title}
-                    </Text>
-                    {task.dueDate ? (
-                      <Text style={styles.taskMeta}>
+                    </ThemedText>
+                    {task.dueDate && (
+                      <ThemedText type="default" fontSize={12} o={0.6}>
                         Vence em {formatDateBR(task.dueDate)}
-                      </Text>
-                    ) : null}
-                  </View>
+                      </ThemedText>
+                    )}
+                  </YStack>
 
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    onPress={() => handleDelete(task)}
-                    style={styles.deleteButton}
-                  >
-                    <Text style={styles.deleteButtonText}>Excluir</Text>
-                  </TouchableOpacity>
-                </View>
+                  <Button onPress={() => handleDelete(task)} bg="transparent" bw={1} borderColor="$cardBorder" size="$2" br="$comfortable" color="$danger">
+                    Excluir
+                  </Button>
+                </XStack>
               ))
             )}
-          </View>
-        </View>
+          </Card>
+        </YStack>
       </ScrollView>
-      {!isDesktop && !showForm ? (
-        <TouchableOpacity
-          accessibilityRole="button"
+
+      {!isDesktop && !showForm && (
+        <Button
+          pos="absolute"
+          right={20}
+          bottom={24 + insets.bottom}
+          bg="$buttonBg"
+          color="$buttonColor"
+          br="$comfortable"
           onPress={() => setShowForm(true)}
-          style={[styles.fabButton, { bottom: 24 + insets.bottom }]}
         >
-          <Text style={styles.fabButtonText}>Nova tarefa</Text>
-        </TouchableOpacity>
-      ) : null}
-    </View>
+          Nova tarefa
+        </Button>
+      )}
+    </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#0D0D0D",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 22,
-    paddingBottom: 28,
-    flexGrow: 1,
-  },
-  scroll: {
-    flex: 1,
-    width: "100%",
-  },
-  wrapper: {
-    gap: 16,
-    width: "100%",
-  },
-  wrapperDesktop: {
-    width: "100%",
-  },
-  wrapperMobile: {
-    maxWidth: 720,
-    alignSelf: "center",
-    width: "100%",
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  header: {
-    gap: 6,
-  },
-  title: {
-    color: "#FFFFFF",
-    fontSize: 22,
-    fontWeight: "800",
-  },
-  subtitle: {
-    color: "#A0A0A0",
-    fontSize: 14,
-  },
-  inputCard: {
-    backgroundColor: "#1A1A1A",
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#2B2B2B",
-    gap: 12,
-  },
-  input: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: "#0F0F0F",
-    borderWidth: 1,
-    borderColor: "#262626",
-  },
-  addButton: {
-    alignItems: "center",
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: "#2EEA8A",
-  },
-  addButtonDisabled: {
-    opacity: 0.5,
-  },
-  addButtonText: {
-    color: "#0D0D0D",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  inputError: {
-    color: "#FF4D4F",
-    fontSize: 12,
-  },
-  primaryButton: {
-    alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    backgroundColor: Colors.light.tint,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  fabButton: {
-    position: "absolute",
-    right: 20,
-    bottom: 24,
-    backgroundColor: Colors.light.tint,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  fabButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  formActions: {
-    gap: 10,
-  },
-  secondaryButton: {
-    alignItems: "center",
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#2B2B2B",
-  },
-  secondaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  listCard: {
-    backgroundColor: "#1A1A1A",
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: "#2B2B2B",
-    gap: 4,
-  },
-  taskRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#2B2B2B",
-  },
-  taskBody: {
-    flex: 1,
-    gap: 4,
-  },
-  taskTitle: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  taskTitleDone: {
-    color: "#7A7A7A",
-    textDecorationLine: "line-through",
-  },
-  taskMeta: {
-    color: "#8F8F8F",
-    fontSize: 12,
-  },
-  deleteButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#3A3A3A",
-  },
-  deleteButtonText: {
-    color: "#FF4D4F",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#3A3A3A",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#111111",
-  },
-  checkboxChecked: {
-    backgroundColor: "#2EEA8A",
-    borderColor: "#2EEA8A",
-  },
-  checkboxMark: {
-    color: "#0D0D0D",
-    fontWeight: "800",
-    fontSize: 14,
-  },
-  emptyText: {
-    color: "#8F8F8F",
-    fontSize: 14,
-    textAlign: "center",
-    paddingVertical: 20,
-  },
-  errorText: {
-    color: "#FF4D4F",
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
-    paddingHorizontal: 20,
-  },
-});

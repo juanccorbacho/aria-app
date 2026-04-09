@@ -4,16 +4,14 @@ import {
     ActivityIndicator,
     Alert,
     ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
 } from "react-native";
+import { XStack, YStack, Button, Circle, Card, SizableText } from "tamagui";
 
-import { Colors } from "@/constants/theme";
 import { useAuth } from "@/hooks/useAuth";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 
 type DueUrgency = "alto" | "medio" | "baixo";
 
@@ -92,26 +90,19 @@ export default function DashboardScreen(): React.JSX.Element {
 
   if (isDashboardLoading) {
     return (
-      <View style={styles.screen}>
-        <ActivityIndicator size="large" color="#FFFFFF" />
-      </View>
+      <ThemedView f={1} ai="center" jc="center">
+        <ActivityIndicator size="large" color="#000000" />
+      </ThemedView>
     );
   }
 
   if (errorMessage) {
     return (
-      <View style={styles.screen}>
-        <Text
-          style={{
-            color: "#FF4D4F",
-            fontSize: 16,
-            fontWeight: "600",
-            textAlign: "center",
-          }}
-        >
+      <ThemedView f={1} ai="center" jc="center">
+        <ThemedText color="$danger" type="defaultSemiBold" ta="center">
           {errorMessage}
-        </Text>
-      </View>
+        </ThemedText>
+      </ThemedView>
     );
   }
 
@@ -132,352 +123,131 @@ export default function DashboardScreen(): React.JSX.Element {
   }));
 
   return (
-    <View style={styles.screen}>
+    <ThemedView f={1}>
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: 32, paddingBottom: 48 }}
       >
-        <View
-          style={[
-            styles.wrapper,
-            isDesktop ? styles.wrapperDesktop : styles.wrapperMobile,
-          ]}
-        >
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <Text style={styles.greeting}>{greeting},</Text>
-              <Text style={styles.name}>{name}</Text>
-            </View>
+        <YStack gap="$6" w="100%" maxWidth={isDesktop ? "100%" : 720} als="center">
+          
+          {/* Header */}
+          <XStack jc="space-between" ai="center">
+            <YStack gap="$1">
+              <ThemedText type="subtitle" fontWeight="$3">{greeting},</ThemedText>
+              <ThemedText type="title" fontSize="$7">{name}</ThemedText>
+            </YStack>
 
-            <TouchableOpacity
+            <Button
               onPress={handleLogout}
               disabled={isAuthLoading}
-              accessibilityRole="button"
-              style={styles.logoutButton}
+              bg="$buttonBg"
+              br="$pill"
+              color="$buttonColor"
+              px="$5"
+              py="$3"
             >
-              <Text style={styles.logoutButtonText}>
-                {isAuthLoading ? "..." : "Sair"}
-              </Text>
-            </TouchableOpacity>
-          </View>
+              {isAuthLoading ? "..." : "Sair"}
+            </Button>
+          </XStack>
 
-          <View style={[styles.cardsGrid, !isDesktop && styles.cardsStack]}>
-            <View
-              style={[
-                styles.card,
-                isDesktop ? styles.cardHalf : styles.cardFull,
-              ]}
+          {/* Cards Grid */}
+          <XStack fw="wrap" gap="$4" fd={isDesktop ? "row" : "column"}>
+            <Card
+              f={1} minWidth={200} bg="$cardBackground" br="$comfortable" p="$5" bw={1} bc="$cardBorder"
             >
-              <Text style={styles.cardTitle}>Saldo do mês</Text>
-              <Text
-                style={[
-                  styles.bigNumber,
-                  saldoMesCents >= 0 ? styles.positive : styles.negative,
-                ]}
-              >
+              <ThemedText type="default" color="$color" o={0.7} mb="$3">Saldo do mês</ThemedText>
+              <ThemedText type="title" fontSize="$8" color={saldoMesCents >= 0 ? "$success" : "$danger"}>
                 {formatCurrencyBRL(saldoMesCents)}
-              </Text>
-              <Text style={styles.cardHint}>Mês atual</Text>
-            </View>
+              </ThemedText>
+              <ThemedText type="default" fontSize="$2" color="$color" o={0.5} mt="$3">Mês atual</ThemedText>
+            </Card>
 
-            <View
-              style={[
-                styles.card,
-                isDesktop ? styles.cardHalf : styles.cardFull,
-              ]}
+            <Card
+              f={1} minWidth={200} bg="$cardBackground" br="$comfortable" p="$5" bw={1} bc="$cardBorder"
             >
-              <Text style={styles.cardTitle}>Contas pendentes</Text>
-              <Text style={[styles.bigNumber, styles.negative]}>
+              <ThemedText type="default" color="$color" o={0.7} mb="$3">Contas pendentes</ThemedText>
+              <ThemedText type="title" fontSize="$8" color="$danger">
                 {formatCurrencyBRL(totalPendentesCents)}
-              </Text>
-              <Text style={styles.cardHint}>Em aberto</Text>
-            </View>
+              </ThemedText>
+              <ThemedText type="default" fontSize="$2" color="$color" o={0.5} mt="$3">Em aberto</ThemedText>
+            </Card>
 
-            <View
-              style={[
-                styles.card,
-                isDesktop ? styles.cardHalf : styles.cardFull,
-              ]}
+            <Card
+              f={1} minWidth={200} bg="$cardBackground" br="$comfortable" p="$5" bw={1} bc="$cardBorder"
             >
-              <Text style={styles.cardTitle}>Tarefas pendentes</Text>
-              <Text style={styles.bigNumber}>{pendingTasksCount}</Text>
-              <Text style={styles.cardHint}>Para concluir</Text>
-            </View>
-          </View>
+              <ThemedText type="default" color="$color" o={0.7} mb="$3">Tarefas pendentes</ThemedText>
+              <ThemedText type="title" fontSize="$8">{pendingTasksCount}</ThemedText>
+              <ThemedText type="default" fontSize="$2" color="$color" o={0.5} mt="$3">Para concluir</ThemedText>
+            </Card>
+          </XStack>
 
-          <View
-            style={[styles.sectionGrid, !isDesktop && styles.sectionGridStack]}
-          >
-            <View
-              style={[
-                styles.section,
-                isDesktop ? styles.sectionHalf : styles.sectionFull,
-              ]}
-            >
-              <Text style={styles.sectionTitle}>Últimas transações</Text>
-
-              <View style={styles.listCard}>
+          {/* Sections List Grid */}
+          <XStack fw="wrap" gap="$4" fd={isDesktop ? "row" : "column"}>
+            
+            {/* Transactions Section */}
+            <YStack f={1} minWidth={300} gap="$3">
+              <ThemedText type="subtitle" fontSize="$5">Últimas transações</ThemedText>
+              <Card bg="$cardBackground" br="$comfortable" px="$4" py="$2" bw={1} bc="$cardBorder" gap="$1">
                 {ultimasTransacoes.length === 0 ? (
-                  <Text style={styles.emptyText}>
+                  <ThemedText type="default" ta="center" py="$5" o={0.6}>
                     Nenhuma transação recente.
-                  </Text>
+                  </ThemedText>
                 ) : (
-                  ultimasTransacoes.map((t) => {
-                    const isIncome: boolean = t.type === "entrada";
+                  ultimasTransacoes.map((t, index) => {
+                    const isIncome = t.type === "entrada";
                     return (
-                      <View key={t.id} style={styles.row}>
-                        <View style={styles.rowLeft}>
-                          <Text style={styles.rowTitle}>{t.description}</Text>
-                          <Text style={styles.rowSubtitle}>
-                            {formatDateBR(t.date)} ·{" "}
-                            {isIncome ? "Entrada" : "Saída"}
-                          </Text>
-                        </View>
-
-                        <View style={styles.rowRight}>
-                          <Text
-                            style={[
-                              styles.rowAmount,
-                              isIncome ? styles.positive : styles.negative,
-                            ]}
-                          >
+                      <XStack key={t.id} ai="center" jc="space-between" py="$3" borderBottomWidth={index === ultimasTransacoes.length - 1 ? 0 : 1} borderBottomColor="$cardBorder">
+                        <YStack f={1} pr="$3" gap="$1">
+                          <ThemedText type="defaultSemiBold">{t.description}</ThemedText>
+                          <ThemedText type="default" fontSize="$1" o={0.6}>
+                            {formatDateBR(t.date)} · {isIncome ? "Entrada" : "Saída"}
+                          </ThemedText>
+                        </YStack>
+                        <YStack ai="flex-end" gap="$1">
+                          <ThemedText type="defaultSemiBold" color={isIncome ? "$success" : "$danger"}>
                             {formatCurrencyBRL(t.amountCents)}
-                          </Text>
-                        </View>
-                      </View>
+                          </ThemedText>
+                        </YStack>
+                      </XStack>
                     );
                   })
                 )}
-              </View>
-            </View>
+              </Card>
+            </YStack>
 
-            <View
-              style={[
-                styles.section,
-                isDesktop ? styles.sectionHalf : styles.sectionFull,
-              ]}
-            >
-              <Text style={styles.sectionTitle}>Contas urgentes</Text>
-
-              <View style={styles.listCard}>
+            {/* Urgent Bills Section */}
+            <YStack f={1} minWidth={300} gap="$3">
+              <ThemedText type="subtitle" fontSize="$5">Contas urgentes</ThemedText>
+              <Card bg="$cardBackground" br="$comfortable" px="$4" py="$2" bw={1} bc="$cardBorder" gap="$1">
                 {contasUrgentes.length === 0 ? (
-                  <Text style={styles.emptyText}>Nenhuma conta urgente.</Text>
+                  <ThemedText type="default" ta="center" py="$5" o={0.6}>Nenhuma conta urgente.</ThemedText>
                 ) : (
-                  contasUrgentes.map((item) => (
-                    <View key={item.id} style={styles.row}>
-                      <View style={styles.rowLeft}>
-                        <Text style={styles.rowTitle}>{item.name}</Text>
-                        <Text style={styles.rowSubtitle}>
+                  contasUrgentes.map((item, index) => (
+                    <XStack key={item.id} ai="center" jc="space-between" py="$3" borderBottomWidth={index === contasUrgentes.length - 1 ? 0 : 1} borderBottomColor="$cardBorder">
+                      <YStack f={1} pr="$3" gap="$1">
+                        <ThemedText type="defaultSemiBold">{item.name}</ThemedText>
+                        <ThemedText type="default" fontSize="$1" o={0.6}>
                           Vence em {formatDateBR(item.dueDateISO)}
-                        </Text>
-                      </View>
+                        </ThemedText>
+                      </YStack>
 
-                      <View style={styles.rowRight}>
-                        <Text style={styles.rowAmount}>
+                      <YStack ai="flex-end" gap="$2">
+                        <ThemedText type="defaultSemiBold">
                           {formatCurrencyBRL(item.amountCents)}
-                        </Text>
-                        <View style={[styles.tag, styles.tagRed]}>
-                          <Text style={styles.tagText}>Urgente</Text>
-                        </View>
-                      </View>
-                    </View>
+                        </ThemedText>
+                        <XStack bg="$danger" px="$2" py="$1" br="$pill">
+                          <ThemedText type="monoLabel" color="$color" fontSize={10} lh={10} ls={0.6}>Urgente</ThemedText>
+                        </XStack>
+                      </YStack>
+                    </XStack>
                   ))
                 )}
-              </View>
-            </View>
-          </View>
-        </View>
+              </Card>
+            </YStack>
+
+          </XStack>
+        </YStack>
       </ScrollView>
-    </View>
+    </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#0D0D0D",
-  },
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 22,
-    paddingBottom: 28,
-    flexGrow: 1,
-  },
-  scroll: {
-    flex: 1,
-    width: "100%",
-  },
-  wrapper: {
-    gap: 18,
-    width: "100%",
-  },
-  wrapperDesktop: {
-    width: "100%",
-  },
-  wrapperMobile: {
-    width: "100%",
-    maxWidth: 720,
-    alignSelf: "center",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  headerLeft: {
-    gap: 2,
-  },
-  greeting: {
-    color: "#B3B3B3",
-    fontSize: 14,
-  },
-  name: {
-    color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  logoutButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: "#1A1A1A",
-    borderWidth: 1,
-    borderColor: "#2B2B2B",
-  },
-  logoutButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  cardsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  cardsStack: {
-    flexDirection: "column",
-  },
-  card: {
-    flexGrow: 1,
-    backgroundColor: "#1A1A1A",
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#2B2B2B",
-  },
-  cardHalf: {
-    width: "48%",
-  },
-  cardFull: {
-    width: "100%",
-  },
-  cardTitle: {
-    color: "#B3B3B3",
-    fontSize: 13,
-    marginBottom: 10,
-  },
-  bigNumber: {
-    fontSize: 26,
-    fontWeight: "800",
-    letterSpacing: 0.2,
-  },
-  cardHint: {
-    marginTop: 10,
-    color: "#7A7A7A",
-    fontSize: 12,
-  },
-  section: {
-    gap: 10,
-  },
-  sectionGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  sectionGridStack: {
-    flexDirection: "column",
-  },
-  sectionHalf: {
-    width: "48%",
-  },
-  sectionFull: {
-    width: "100%",
-  },
-  sectionTitle: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  listCard: {
-    backgroundColor: "#1A1A1A",
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: "#2B2B2B",
-    gap: 4,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#2B2B2B",
-  },
-  rowLeft: {
-    flex: 1,
-    paddingRight: 10,
-    gap: 2,
-  },
-  rowRight: {
-    alignItems: "flex-end",
-    gap: 6,
-  },
-  rowTitle: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  rowSubtitle: {
-    color: "#8F8F8F",
-    fontSize: 12,
-  },
-  rowAmount: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  emptyText: {
-    color: "#8F8F8F",
-    fontSize: 14,
-    textAlign: "center",
-    paddingVertical: 16,
-  },
-  tag: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  tagText: {
-    color: "#0D0D0D",
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  tagYellow: {
-    backgroundColor: "#FFD54A",
-  },
-  tagGreen: {
-    backgroundColor: "#2EEA8A",
-  },
-  tagRed: {
-    backgroundColor: "#FF4D4F",
-  },
-  positive: {
-    color: Colors.light.success,
-  },
-  negative: {
-    color: Colors.light.danger,
-  },
-});

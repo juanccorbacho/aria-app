@@ -3,18 +3,15 @@ import {
     ActivityIndicator,
     Alert,
     ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { XStack, YStack, Button, Card, Input } from "tamagui";
 
-import { Colors } from "@/constants/theme";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { useTransactions } from "@/hooks/useTransactions";
 import type { Transaction, TransactionType } from "@/types/models";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 
 const formatCurrencyBRL = (valueCents: number): string => {
   const value: number = valueCents / 100;
@@ -210,441 +207,175 @@ export default function TransactionsScreen(): React.JSX.Element {
 
   if (isLoading) {
     return (
-      <View style={styles.screen}>
-        <ActivityIndicator size="large" color="#FFFFFF" />
-      </View>
+      <ThemedView f={1} ai="center" jc="center">
+        <ActivityIndicator size="large" color="#000000" />
+      </ThemedView>
     );
   }
 
   if (errorMessage) {
     return (
-      <View style={styles.screen}>
-        <Text style={styles.errorText}>{errorMessage}</Text>
-      </View>
+      <ThemedView f={1} ai="center" jc="center">
+        <ThemedText color="$danger">{errorMessage}</ThemedText>
+      </ThemedView>
     );
   }
 
   return (
-    <View style={styles.screen}>
+    <ThemedView f={1}>
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 28 }}
       >
-        <View
-          style={[
-            styles.wrapper,
-            isDesktop ? styles.wrapperDesktop : styles.wrapperMobile,
-          ]}
-        >
-          <View style={styles.headerRow}>
-            <View style={styles.header}>
-              <Text style={styles.title}>Transações</Text>
-              <Text style={styles.subtitle}>
-                Acompanhe entradas e saídas do mês.
-              </Text>
-            </View>
+        <YStack gap="$5" w="100%" maxWidth={isDesktop ? "100%" : 720} als="center">
+          
+          <XStack ai="center" jc="space-between" gap="$4">
+            <YStack gap="$1">
+              <ThemedText type="title" fontSize="$7">Transações</ThemedText>
+              <ThemedText type="default" o={0.6}>Acompanhe entradas e saídas do mês.</ThemedText>
+            </YStack>
             {isDesktop && !showForm ? (
-              <TouchableOpacity
-                accessibilityRole="button"
-                onPress={() => setShowForm(true)}
-                style={styles.primaryButton}
-              >
-                <Text style={styles.primaryButtonText}>Nova transação</Text>
-              </TouchableOpacity>
+              <Button onPress={() => setShowForm(true)} bg="$buttonBg" color="$buttonColor" br="$pill">
+                Nova transação
+              </Button>
             ) : null}
-          </View>
+          </XStack>
 
-          {showForm ? (
-            <View style={styles.inputCard}>
-              <TextInput
+          {showForm && (
+            <Card bg="$cardBackground" br="$comfortable" p="$5" bw={1} bc="$cardBorder" gap="$4">
+              <Input
                 value={description}
                 onChangeText={setDescription}
                 placeholder="Descrição"
-                placeholderTextColor="#6E6E6E"
-                style={styles.input}
+                bg="transparent"
+                color="$color"
+                br="$comfortable"
+                bw={1}
+                borderColor="$cardBorder"
               />
-              {descriptionError ? (
-                <Text style={styles.inputError}>{descriptionError}</Text>
-              ) : null}
+              {descriptionError && <ThemedText color="$danger" fontSize={12}>{descriptionError}</ThemedText>}
 
-              <TextInput
+              <Input
                 value={amount}
                 onChangeText={(value) => setAmount(formatAmountInput(value))}
                 placeholder="Valor (R$)"
-                placeholderTextColor="#6E6E6E"
-                style={styles.input}
                 keyboardType="decimal-pad"
+                bg="transparent"
+                color="$color"
+                br="$comfortable"
+                bw={1}
+                borderColor="$cardBorder"
               />
-              {amountError ? (
-                <Text style={styles.inputError}>{amountError}</Text>
-              ) : null}
+              {amountError && <ThemedText color="$danger" fontSize={12}>{amountError}</ThemedText>}
 
-              <View style={styles.typeRow}>
-                <TouchableOpacity
-                  accessibilityRole="button"
+              <XStack gap="$3">
+                <Button
+                  f={1}
+                  br="$comfortable"
+                  bg={type === "entrada" ? "$success" : "transparent"}
+                  bw={1}
+                  borderColor={type === "entrada" ? "$success" : "$cardBorder"}
                   onPress={() => setType("entrada")}
-                  style={[
-                    styles.typeButton,
-                    type === "entrada" && styles.typeButtonActive,
-                  ]}
                 >
-                  <Text
-                    style={[
-                      styles.typeButtonText,
-                      type === "entrada" && styles.typeButtonTextActive,
-                    ]}
-                  >
-                    Entrada
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  accessibilityRole="button"
+                  <ThemedText type="defaultSemiBold" color={type === "entrada" ? "$pureBlack" : "$color"}>Entrada</ThemedText>
+                </Button>
+                <Button
+                  f={1}
+                  br="$comfortable"
+                  bg={type === "saida" ? "$success" : "transparent"}
+                  bw={1}
+                  borderColor={type === "saida" ? "$success" : "$cardBorder"}
                   onPress={() => setType("saida")}
-                  style={[
-                    styles.typeButton,
-                    type === "saida" && styles.typeButtonActive,
-                  ]}
                 >
-                  <Text
-                    style={[
-                      styles.typeButtonText,
-                      type === "saida" && styles.typeButtonTextActive,
-                    ]}
-                  >
-                    Saída
-                  </Text>
-                </TouchableOpacity>
-              </View>
+                  <ThemedText type="defaultSemiBold" color={type === "saida" ? "$pureBlack" : "$color"}>Saída</ThemedText>
+                </Button>
+              </XStack>
 
-              <TextInput
+              <Input
                 value={category}
                 onChangeText={setCategory}
                 placeholder="Categoria (opcional)"
-                placeholderTextColor="#6E6E6E"
-                style={styles.input}
+                bg="transparent"
+                color="$color"
+                br="$comfortable"
+                bw={1}
+                borderColor="$cardBorder"
               />
 
-              <TextInput
+              <Input
                 value={date}
                 onChangeText={(value) => setDate(formatDateInput(value))}
                 placeholder="Data (AAAA-MM-DD)"
-                placeholderTextColor="#6E6E6E"
-                style={styles.input}
                 autoCapitalize="none"
                 autoCorrect={false}
                 maxLength={10}
                 keyboardType="numbers-and-punctuation"
+                bg="transparent"
+                color="$color"
+                br="$comfortable"
+                bw={1}
+                borderColor="$cardBorder"
               />
-              {dateError ? (
-                <Text style={styles.inputError}>{dateError}</Text>
-              ) : null}
+              {dateError && <ThemedText color="$danger" fontSize={12}>{dateError}</ThemedText>}
 
-              <View style={styles.formActions}>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  onPress={handleCreate}
-                  disabled={!canSubmit || isSubmitting}
-                  style={[
-                    styles.addButton,
-                    !canSubmit && styles.addButtonDisabled,
-                  ]}
-                >
-                  <Text style={styles.addButtonText}>Adicionar transação</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  onPress={handleCancel}
-                  style={styles.secondaryButton}
-                >
-                  <Text style={styles.secondaryButtonText}>Cancelar</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : null}
+              <YStack gap="$3" mt="$3">
+                <Button onPress={handleCreate} disabled={!canSubmit || isSubmitting} opacity={(!canSubmit || isSubmitting) ? 0.5 : 1} bg="$success" br="$comfortable" color="$pureBlack">
+                  Adicionar transação
+                </Button>
+                <Button onPress={handleCancel} bg="transparent" br="$comfortable" bw={1} borderColor="$cardBorder">
+                  Cancelar
+                </Button>
+              </YStack>
+            </Card>
+          )}
 
-          <View style={styles.listCard}>
+          <Card bg="$cardBackground" br="$comfortable" px="$4" py="$2" bw={1} bc="$cardBorder">
             {orderedTransactions.length === 0 ? (
-              <Text style={styles.emptyText}>
-                Nenhuma transação cadastrada.
-              </Text>
+              <ThemedText ta="center" py="$5" o={0.6}>Nenhuma transação cadastrada.</ThemedText>
             ) : (
-              orderedTransactions.map((transaction) => {
+              orderedTransactions.map((transaction, index) => {
                 const isIncome = transaction.type === "entrada";
                 return (
-                  <View key={transaction.id} style={styles.row}>
-                    <View style={styles.rowLeft}>
-                      <Text style={styles.rowTitle}>
-                        {transaction.description}
-                      </Text>
-                      <Text style={styles.rowSubtitle}>
-                        {transaction.category ?? "Sem categoria"} ·{" "}
-                        {formatDateBR(transaction.date)}
-                      </Text>
-                    </View>
+                  <XStack key={transaction.id} ai="center" gap="$4" py="$4" borderBottomWidth={index === orderedTransactions.length - 1 ? 0 : 1} borderBottomColor="$cardBorder">
+                    <YStack f={1} gap="$1">
+                      <ThemedText type="defaultSemiBold">{transaction.description}</ThemedText>
+                      <ThemedText type="default" fontSize={12} o={0.6}>
+                        {transaction.category ?? "Sem categoria"} · {formatDateBR(transaction.date)}
+                      </ThemedText>
+                    </YStack>
 
-                    <View style={styles.rowRight}>
-                      <Text
-                        style={[
-                          styles.rowAmount,
-                          isIncome ? styles.positive : styles.negative,
-                        ]}
-                      >
+                    <YStack ai="flex-end" gap="$2">
+                      <ThemedText type="defaultSemiBold" color={isIncome ? "$success" : "$danger"}>
                         {formatCurrencyBRL(transaction.amountCents)}
-                      </Text>
-                      <Text style={styles.rowMeta}>
+                      </ThemedText>
+                      <ThemedText type="default" fontSize={12} o={0.6}>
                         {isIncome ? "Entrada" : "Saída"}
-                      </Text>
-                      <TouchableOpacity
-                        accessibilityRole="button"
-                        onPress={() => handleDelete(transaction)}
-                        style={styles.deleteButton}
-                      >
-                        <Text style={styles.deleteButtonText}>Excluir</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
+                      </ThemedText>
+                      <Button onPress={() => handleDelete(transaction)} bg="transparent" bw={1} borderColor="$cardBorder" size="$2" br="$comfortable" color="$danger">
+                        Excluir
+                      </Button>
+                    </YStack>
+                  </XStack>
                 );
               })
             )}
-          </View>
-        </View>
+          </Card>
+        </YStack>
       </ScrollView>
-      {!isDesktop && !showForm ? (
-        <TouchableOpacity
-          accessibilityRole="button"
+
+      {!isDesktop && !showForm && (
+        <Button
+          pos="absolute"
+          right={20}
+          bottom={24 + insets.bottom}
+          bg="$buttonBg"
+          color="$buttonColor"
+          br="$comfortable"
           onPress={() => setShowForm(true)}
-          style={[styles.fabButton, { bottom: 24 + insets.bottom }]}
         >
-          <Text style={styles.fabButtonText}>Nova transação</Text>
-        </TouchableOpacity>
-      ) : null}
-    </View>
+          Nova transação
+        </Button>
+      )}
+    </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#0D0D0D",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 22,
-    paddingBottom: 28,
-    flexGrow: 1,
-  },
-  scroll: {
-    flex: 1,
-    width: "100%",
-  },
-  wrapper: {
-    gap: 16,
-    width: "100%",
-  },
-  wrapperDesktop: {
-    width: "100%",
-  },
-  wrapperMobile: {
-    maxWidth: 820,
-    alignSelf: "center",
-    width: "100%",
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  header: {
-    gap: 6,
-  },
-  title: {
-    color: "#FFFFFF",
-    fontSize: 22,
-    fontWeight: "800",
-  },
-  subtitle: {
-    color: "#A0A0A0",
-    fontSize: 14,
-  },
-  inputCard: {
-    backgroundColor: "#1A1A1A",
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#2B2B2B",
-    gap: 12,
-  },
-  input: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: "#0F0F0F",
-    borderWidth: 1,
-    borderColor: "#262626",
-  },
-  inputError: {
-    color: "#FF4D4F",
-    fontSize: 12,
-  },
-  primaryButton: {
-    alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    backgroundColor: Colors.light.tint,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  fabButton: {
-    position: "absolute",
-    right: 20,
-    bottom: 24,
-    backgroundColor: Colors.light.tint,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  fabButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  formActions: {
-    gap: 10,
-  },
-  secondaryButton: {
-    alignItems: "center",
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#2B2B2B",
-  },
-  secondaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  typeRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  typeButton: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#2B2B2B",
-    alignItems: "center",
-    backgroundColor: "#121212",
-  },
-  typeButtonActive: {
-    backgroundColor: "#2EEA8A",
-    borderColor: "#2EEA8A",
-  },
-  typeButtonText: {
-    color: "#B3B3B3",
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  typeButtonTextActive: {
-    color: "#0D0D0D",
-  },
-  addButton: {
-    alignItems: "center",
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: "#2EEA8A",
-  },
-  addButtonDisabled: {
-    opacity: 0.5,
-  },
-  addButtonText: {
-    color: "#0D0D0D",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  listCard: {
-    backgroundColor: "#1A1A1A",
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: "#2B2B2B",
-    gap: 4,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#2B2B2B",
-  },
-  rowLeft: {
-    flex: 1,
-    paddingRight: 10,
-    gap: 2,
-  },
-  rowRight: {
-    alignItems: "flex-end",
-    gap: 6,
-  },
-  rowTitle: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  rowSubtitle: {
-    color: "#8F8F8F",
-    fontSize: 12,
-  },
-  rowAmount: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  rowMeta: {
-    color: "#8F8F8F",
-    fontSize: 12,
-  },
-  deleteButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#3A3A3A",
-  },
-  deleteButtonText: {
-    color: "#FF4D4F",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  emptyText: {
-    color: "#8F8F8F",
-    fontSize: 14,
-    textAlign: "center",
-    paddingVertical: 20,
-  },
-  errorText: {
-    color: "#FF4D4F",
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
-    paddingHorizontal: 20,
-  },
-  positive: {
-    color: "#2EEA8A",
-  },
-  negative: {
-    color: "#FF4D4F",
-  },
-});
