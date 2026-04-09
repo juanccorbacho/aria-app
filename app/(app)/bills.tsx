@@ -4,18 +4,15 @@ import {
     Alert,
     Pressable,
     ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { XStack, YStack, Button, Card, Input } from "tamagui";
 
-import { Colors } from "@/constants/theme";
 import { useBills } from "@/hooks/useBills";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import type { Bill, BillUrgency } from "@/types/models";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 
 type FilterStatus = "todas" | "pendentes" | "pagas";
 
@@ -231,564 +228,207 @@ export default function BillsScreen(): React.JSX.Element {
 
   if (isLoading) {
     return (
-      <View style={styles.screen}>
-        <ActivityIndicator size="large" color="#FFFFFF" />
-      </View>
+      <ThemedView f={1} ai="center" jc="center">
+        <ActivityIndicator size="large" color="#000000" />
+      </ThemedView>
     );
   }
 
   if (errorMessage) {
     return (
-      <View style={styles.screen}>
-        <Text style={styles.errorText}>{errorMessage}</Text>
-      </View>
+      <ThemedView f={1} ai="center" jc="center">
+        <ThemedText color="$danger">{errorMessage}</ThemedText>
+      </ThemedView>
     );
   }
 
   return (
-    <View style={styles.screen}>
+    <ThemedView f={1}>
       <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 28 }}
       >
-        <View
-          style={[
-            styles.wrapper,
-            isDesktop ? styles.wrapperDesktop : styles.wrapperMobile,
-          ]}
-        >
-          <View style={styles.headerRow}>
-            <View style={styles.header}>
-              <Text style={styles.title}>Contas a pagar</Text>
-              <Text style={styles.subtitle}>
-                Acompanhe vencimentos e pagamentos.
-              </Text>
-            </View>
+        <YStack gap="$5" w="100%" maxWidth={isDesktop ? "100%" : 720} als="center">
+          
+          <XStack ai="center" jc="space-between" gap="$4">
+            <YStack gap="$1">
+              <ThemedText type="title" fontSize="$7">Contas a pagar</ThemedText>
+              <ThemedText type="default" o={0.6}>Acompanhe vencimentos e pagamentos.</ThemedText>
+            </YStack>
             {isDesktop && !showForm ? (
-              <TouchableOpacity
-                accessibilityRole="button"
-                onPress={() => setShowForm(true)}
-                style={styles.primaryButton}
-              >
-                <Text style={styles.primaryButtonText}>Nova conta</Text>
-              </TouchableOpacity>
+              <Button onPress={() => setShowForm(true)} bg="$buttonBg" color="$buttonColor" br="$pill">
+                Nova conta
+              </Button>
             ) : null}
-          </View>
+          </XStack>
 
-          <View style={styles.filterRow}>
+          <XStack gap="$3">
             {["todas", "pendentes", "pagas"].map((value) => {
-              const label =
-                value === "todas"
-                  ? "Todas"
-                  : value === "pendentes"
-                    ? "Pendentes"
-                    : "Pagas";
+              const label = value === "todas" ? "Todas" : value === "pendentes" ? "Pendentes" : "Pagas";
               const active = filter === value;
               return (
-                <TouchableOpacity
+                <Button
                   key={value}
-                  accessibilityRole="button"
                   onPress={() => setFilter(value as FilterStatus)}
-                  style={[
-                    styles.filterButton,
-                    active && styles.filterButtonActive,
-                  ]}
+                  f={1}
+                  br="$comfortable"
+                  bg={active ? "$success" : "$cardBackground"}
+                  color={active ? "$pureBlack" : "$color"}
+                  bw={1}
+                  borderColor={active ? "$success" : "$cardBorder"}
                 >
-                  <Text
-                    style={[
-                      styles.filterButtonText,
-                      active && styles.filterButtonTextActive,
-                    ]}
-                  >
-                    {label}
-                  </Text>
-                </TouchableOpacity>
+                  <ThemedText type="defaultSemiBold" color={active ? "$pureBlack" : "$color"}>{label}</ThemedText>
+                </Button>
               );
             })}
-          </View>
+          </XStack>
 
-          {showForm ? (
-            <View style={styles.inputCard}>
-              <TextInput
+          {showForm && (
+            <Card bg="$cardBackground" br="$comfortable" p="$5" bw={1} bc="$cardBorder" gap="$4">
+              <Input
                 value={description}
                 onChangeText={setDescription}
                 placeholder="Descrição"
-                placeholderTextColor="#6E6E6E"
-                style={styles.input}
+                bg="transparent"
+                color="$color"
+                br="$comfortable"
+                bw={1}
+                borderColor="$cardBorder"
               />
-              {descriptionError ? (
-                <Text style={styles.inputError}>{descriptionError}</Text>
-              ) : null}
+              {descriptionError && <ThemedText color="$danger" fontSize={12}>{descriptionError}</ThemedText>}
 
-              <TextInput
+              <Input
                 value={amount}
                 onChangeText={(value) => setAmount(formatAmountInput(value))}
                 placeholder="Valor (R$)"
-                placeholderTextColor="#6E6E6E"
-                style={styles.input}
                 keyboardType="decimal-pad"
+                bg="transparent"
+                color="$color"
+                br="$comfortable"
+                bw={1}
+                borderColor="$cardBorder"
               />
-              {amountError ? (
-                <Text style={styles.inputError}>{amountError}</Text>
-              ) : null}
+              {amountError && <ThemedText color="$danger" fontSize={12}>{amountError}</ThemedText>}
 
-              <TextInput
+              <Input
                 value={dueDate}
                 onChangeText={(value) => setDueDate(formatDateInput(value))}
                 placeholder="Vencimento (AAAA-MM-DD)"
-                placeholderTextColor="#6E6E6E"
-                style={styles.input}
                 autoCapitalize="none"
                 autoCorrect={false}
                 maxLength={10}
                 keyboardType="numbers-and-punctuation"
+                bg="transparent"
+                color="$color"
+                br="$comfortable"
+                bw={1}
+                borderColor="$cardBorder"
               />
-              {dueDateError ? (
-                <Text style={styles.inputError}>{dueDateError}</Text>
-              ) : null}
+              {dueDateError && <ThemedText color="$danger" fontSize={12}>{dueDateError}</ThemedText>}
 
-              <View style={styles.urgencyRow}>
+              <XStack gap="$3">
                 {["alto", "medio", "baixo"].map((value) => {
-                  const label =
-                    value === "alto"
-                      ? "Alto"
-                      : value === "medio"
-                        ? "Médio"
-                        : "Baixo";
+                  const label = value === "alto" ? "Alto" : value === "medio" ? "Médio" : "Baixo";
                   const active = urgency === value;
                   return (
-                    <TouchableOpacity
+                    <Button
                       key={value}
-                      accessibilityRole="button"
                       onPress={() => setUrgency(value as BillUrgency)}
-                      style={[
-                        styles.urgencyButton,
-                        active && styles.urgencyButtonActive,
-                      ]}
+                      f={1}
+                      br="$comfortable"
+                      bg={active ? "$success" : "transparent"}
+                      bw={1}
+                      borderColor={active ? "$success" : "$cardBorder"}
                     >
-                      <Text
-                        style={[
-                          styles.urgencyButtonText,
-                          active && styles.urgencyButtonTextActive,
-                        ]}
-                      >
-                        {label}
-                      </Text>
-                    </TouchableOpacity>
+                      <ThemedText color={active ? "$pureBlack" : "$color"} type="defaultSemiBold">{label}</ThemedText>
+                    </Button>
                   );
                 })}
-              </View>
+              </XStack>
 
-              <View style={styles.toggleRow}>
+              <XStack ai="center" gap="$3">
                 <Pressable
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: paid }}
-                  onPress={() => setPaid((current) => !current)}
-                  style={[styles.checkbox, paid && styles.checkboxChecked]}
+                  onPress={() => setPaid((c) => !c)}
+                  style={{ width: 24, height: 24, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center', borderColor: paid ? '#2EEA8A' : '#3A3A3A', backgroundColor: paid ? '#2EEA8A' : 'transparent' }}
                 >
-                  {paid ? <Text style={styles.checkboxMark}>✓</Text> : null}
+                  {paid && <Text style={{ color: '#000', fontWeight: 'bold' }}>✓</Text>}
                 </Pressable>
-                <Text style={styles.toggleLabel}>Pago</Text>
-              </View>
+                <ThemedText type="defaultSemiBold">Pago</ThemedText>
+              </XStack>
 
-              <View style={styles.toggleRow}>
+              <XStack ai="center" gap="$3">
                 <Pressable
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: recurring }}
-                  onPress={() => setRecurring((current) => !current)}
-                  style={[styles.checkbox, recurring && styles.checkboxChecked]}
+                  onPress={() => setRecurring((c) => !c)}
+                  style={{ width: 24, height: 24, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center', borderColor: recurring ? '#2EEA8A' : '#3A3A3A', backgroundColor: recurring ? '#2EEA8A' : 'transparent' }}
                 >
-                  {recurring ? (
-                    <Text style={styles.checkboxMark}>✓</Text>
-                  ) : null}
-                </Pressable>
-                <Text style={styles.toggleLabel}>Recorrente</Text>
-              </View>
+                  {recurring && <Text style={{ color: '#000', fontWeight: 'bold' }}>✓</Text>}
+        </Pressable>
+                <ThemedText type="defaultSemiBold">Recorrente</ThemedText>
+              </XStack>
 
-              <View style={styles.formActions}>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  onPress={handleCreate}
-                  disabled={!canSubmit || isSubmitting}
-                  style={[
-                    styles.addButton,
-                    !canSubmit && styles.addButtonDisabled,
-                  ]}
-                >
-                  <Text style={styles.addButtonText}>Adicionar conta</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  onPress={handleCancel}
-                  style={styles.secondaryButton}
-                >
-                  <Text style={styles.secondaryButtonText}>Cancelar</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : null}
+              <YStack gap="$3" mt="$3">
+                <Button onPress={handleCreate} disabled={!canSubmit || isSubmitting} opacity={(!canSubmit || isSubmitting) ? 0.5 : 1} bg="$success" br="$comfortable" color="$pureBlack">
+                  Adicionar conta
+                </Button>
+                <Button onPress={handleCancel} bg="transparent" br="$comfortable" bw={1} borderColor="$cardBorder">
+                  Cancelar
+                </Button>
+              </YStack>
+            </Card>
+          )}
 
-          <View style={styles.listCard}>
+          <Card bg="$cardBackground" br="$comfortable" px="$4" py="$2" bw={1} bc="$cardBorder">
             {filteredBills.length === 0 ? (
-              <Text style={styles.emptyText}>Nenhuma conta cadastrada.</Text>
+              <ThemedText ta="center" py="$5" o={0.6}>Nenhuma conta cadastrada.</ThemedText>
             ) : (
-              filteredBills.map((bill) => {
-                const urgencyStyle =
-                  bill.urgency === "alto"
-                    ? styles.badgeRed
-                    : bill.urgency === "medio"
-                      ? styles.badgeYellow
-                      : styles.badgeGreen;
+              filteredBills.map((bill, index) => {
+                const urgencyColor = bill.urgency === "alto" ? "$danger" : bill.urgency === "medio" ? "$warning" : "$success";
 
                 return (
-                  <View key={bill.id} style={styles.row}>
+                  <XStack key={bill.id} ai="center" gap="$4" py="$4" borderBottomWidth={index === filteredBills.length - 1 ? 0 : 1} borderBottomColor="$cardBorder">
                     <Pressable
-                      accessibilityRole="checkbox"
-                      accessibilityState={{ checked: bill.paid }}
-                      onPress={() => handleTogglePaid(bill)}
-                      style={[
-                        styles.checkbox,
-                        bill.paid && styles.checkboxChecked,
-                      ]}
-                    >
-                      {bill.paid ? (
-                        <Text style={styles.checkboxMark}>✓</Text>
-                      ) : null}
-                    </Pressable>
+                  onPress={() => handleTogglePaid(bill)}
+                  style={{ width: 24, height: 24, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center', borderColor: bill.paid ? '#2EEA8A' : '#3A3A3A', backgroundColor: bill.paid ? '#2EEA8A' : 'transparent' }}
+                >
+                  {bill.paid && <Text style={{ color: '#000', fontWeight: 'bold' }}>✓</Text>}
+                </Pressable>
 
-                    <View style={styles.rowLeft}>
-                      <Text style={styles.rowTitle}>{bill.description}</Text>
-                      <Text style={styles.rowSubtitle}>
-                        Vence em {formatDateBR(bill.dueDate)}
-                      </Text>
-                      <View style={[styles.badge, urgencyStyle]}>
-                        <Text style={styles.badgeText}>{bill.urgency}</Text>
-                      </View>
-                    </View>
+                    <YStack f={1} gap="$1">
+                      <ThemedText type="defaultSemiBold">{bill.description}</ThemedText>
+                      <ThemedText type="default" fontSize={12} o={0.6}>Vence em {formatDateBR(bill.dueDate)}</ThemedText>
+                      <XStack bg={urgencyColor} px="$2" py="$1" br="$pill" als="flex-start" mt="$1">
+                        <ThemedText type="monoLabel" fontSize={10} color="$pureBlack">{bill.urgency}</ThemedText>
+                      </XStack>
+                    </YStack>
 
-                    <View style={styles.rowRight}>
-                      <Text style={styles.rowAmount}>
-                        {formatCurrencyBRL(bill.amountCents)}
-                      </Text>
-                      <Text style={styles.rowMeta}>
-                        {bill.paid ? "Pago" : "Pendente"}
-                      </Text>
-                      <TouchableOpacity
-                        accessibilityRole="button"
-                        onPress={() => handleDelete(bill)}
-                        style={styles.deleteButton}
-                      >
-                        <Text style={styles.deleteButtonText}>Excluir</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
+                    <YStack ai="flex-end" gap="$2">
+                      <ThemedText type="defaultSemiBold">{formatCurrencyBRL(bill.amountCents)}</ThemedText>
+                      <ThemedText type="default" fontSize={12} o={0.6}>{bill.paid ? "Pago" : "Pendente"}</ThemedText>
+                      <Button onPress={() => handleDelete(bill)} bg="transparent" bw={1} borderColor="$cardBorder" size="$2" br="$comfortable" color="$danger">
+                        Excluir
+                      </Button>
+                    </YStack>
+                  </XStack>
                 );
               })
             )}
-          </View>
-        </View>
+          </Card>
+        </YStack>
       </ScrollView>
-      {!isDesktop && !showForm ? (
-        <TouchableOpacity
-          accessibilityRole="button"
+
+      {!isDesktop && !showForm && (
+        <Button
+          pos="absolute"
+          right={20}
+          bottom={24 + insets.bottom}
+          bg="$buttonBg"
+          color="$buttonColor"
+          br="$comfortable"
           onPress={() => setShowForm(true)}
-          style={[styles.fabButton, { bottom: 24 + insets.bottom }]}
         >
-          <Text style={styles.fabButtonText}>Nova conta</Text>
-        </TouchableOpacity>
-      ) : null}
-    </View>
+          Nova conta
+        </Button>
+      )}
+    </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#0D0D0D",
-  },
-  scroll: {
-    flex: 1,
-    width: "100%",
-  },
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 22,
-    paddingBottom: 28,
-    flexGrow: 1,
-  },
-  wrapper: {
-    gap: 16,
-    width: "100%",
-  },
-  wrapperDesktop: {
-    width: "100%",
-  },
-  wrapperMobile: {
-    width: "100%",
-    maxWidth: 720,
-    alignSelf: "center",
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  header: {
-    gap: 6,
-  },
-  title: {
-    color: "#FFFFFF",
-    fontSize: 22,
-    fontWeight: "800",
-  },
-  subtitle: {
-    color: "#A0A0A0",
-    fontSize: 14,
-  },
-  primaryButton: {
-    alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    backgroundColor: Colors.light.tint,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  filterRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  filterButton: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#2B2B2B",
-    alignItems: "center",
-    backgroundColor: "#121212",
-  },
-  filterButtonActive: {
-    backgroundColor: "#2EEA8A",
-    borderColor: "#2EEA8A",
-  },
-  filterButtonText: {
-    color: "#B3B3B3",
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  filterButtonTextActive: {
-    color: "#0D0D0D",
-  },
-  inputCard: {
-    backgroundColor: "#1A1A1A",
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#2B2B2B",
-    gap: 12,
-  },
-  input: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: "#0F0F0F",
-    borderWidth: 1,
-    borderColor: "#262626",
-  },
-  inputError: {
-    color: "#FF4D4F",
-    fontSize: 12,
-  },
-  urgencyRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  urgencyButton: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#2B2B2B",
-    alignItems: "center",
-    backgroundColor: "#121212",
-  },
-  urgencyButtonActive: {
-    backgroundColor: "#2EEA8A",
-    borderColor: "#2EEA8A",
-  },
-  urgencyButtonText: {
-    color: "#B3B3B3",
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  urgencyButtonTextActive: {
-    color: "#0D0D0D",
-  },
-  toggleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  toggleLabel: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  formActions: {
-    gap: 10,
-  },
-  addButton: {
-    alignItems: "center",
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: "#2EEA8A",
-  },
-  addButtonDisabled: {
-    opacity: 0.5,
-  },
-  addButtonText: {
-    color: "#0D0D0D",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  secondaryButton: {
-    alignItems: "center",
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#2B2B2B",
-  },
-  secondaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  listCard: {
-    backgroundColor: "#1A1A1A",
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: "#2B2B2B",
-    gap: 4,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#2B2B2B",
-  },
-  rowLeft: {
-    flex: 1,
-    gap: 4,
-  },
-  rowRight: {
-    alignItems: "flex-end",
-    gap: 6,
-  },
-  rowTitle: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  rowSubtitle: {
-    color: "#8F8F8F",
-    fontSize: 12,
-  },
-  rowAmount: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  rowMeta: {
-    color: "#8F8F8F",
-    fontSize: 12,
-  },
-  badge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  badgeText: {
-    color: "#0D0D0D",
-    fontSize: 12,
-    fontWeight: "800",
-    textTransform: "capitalize",
-  },
-  badgeRed: {
-    backgroundColor: "#FF4D4F",
-  },
-  badgeYellow: {
-    backgroundColor: "#FFD54A",
-  },
-  badgeGreen: {
-    backgroundColor: "#2EEA8A",
-  },
-  deleteButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#3A3A3A",
-  },
-  deleteButtonText: {
-    color: "#FF4D4F",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#3A3A3A",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#111111",
-  },
-  checkboxChecked: {
-    backgroundColor: "#2EEA8A",
-    borderColor: "#2EEA8A",
-  },
-  checkboxMark: {
-    color: "#0D0D0D",
-    fontWeight: "800",
-    fontSize: 14,
-  },
-  emptyText: {
-    color: "#8F8F8F",
-    fontSize: 14,
-    textAlign: "center",
-    paddingVertical: 20,
-  },
-  errorText: {
-    color: "#FF4D4F",
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
-    paddingHorizontal: 20,
-  },
-  fabButton: {
-    position: "absolute",
-    right: 20,
-    backgroundColor: Colors.light.tint,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  fabButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-});

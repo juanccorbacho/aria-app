@@ -1,48 +1,24 @@
-import { StyleSheet, Text, View } from "react-native";
-
 import { useIsDesktop } from "@/hooks/useIsDesktop";
+import { ThemedView } from "@/components/themed-view";
+import { ThemedText } from "@/components/themed-text";
+import { YStack } from "tamagui";
 
 export default function ProfileScreen(): React.JSX.Element {
   const isDesktop = useIsDesktop();
 
   return (
-    <View style={styles.screen}>
-      <View
-        style={[
-          styles.wrapper,
-          isDesktop ? styles.wrapperDesktop : styles.wrapperMobile,
-        ]}
+    <ThemedView f={1} ai="center" jc="center" w="100%">
+      <YStack
+        f={1}
+        w="100%"
+        ai="center"
+        jc="center"
+        px="$5"
+        maxWidth={isDesktop ? "100%" : 720}
+        als="center"
       >
-        <Text style={styles.text}>Perfil</Text>
-      </View>
-    </View>
+        <ThemedText type="title">Perfil</ThemedText>
+      </YStack>
+    </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    width: "100%",
-    alignItems: "stretch",
-    justifyContent: "center",
-  },
-  wrapper: {
-    flex: 1,
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 20,
-  },
-  wrapperDesktop: {
-    width: "100%",
-  },
-  wrapperMobile: {
-    width: "100%",
-    maxWidth: 720,
-    alignSelf: "center",
-  },
-  text: {
-    fontSize: 18,
-    fontWeight: "600",
-  },
-});

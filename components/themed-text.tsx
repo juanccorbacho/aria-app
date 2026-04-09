@@ -1,60 +1,57 @@
-import { StyleSheet, Text, type TextProps } from 'react-native';
+import { GetProps, Text as TamaguiText, styled } from 'tamagui';
 
-import { useThemeColor } from '@/hooks/use-theme-color';
+export const ThemedText = styled(TamaguiText, {
+  fontFamily: '$body',
+  color: '$color',
 
-export type ThemedTextProps = TextProps & {
-  lightColor?: string;
-  darkColor?: string;
-  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link';
-};
+  variants: {
+    type: {
+      default: {
+        fontSize: '$3', // 16px
+        lineHeight: '$5', // 1.4
+        letterSpacing: '$2', // -0.14
+        fontWeight: '$4', // 400
+      },
+      title: {
+        fontFamily: '$heading',
+        fontSize: '$9', // 64px
+        lineHeight: '$2', // 1.1
+        letterSpacing: '$4', // -0.96
+        fontWeight: '$8', // 700
+      },
+      defaultSemiBold: {
+        fontSize: '$3',
+        lineHeight: '$5',
+        letterSpacing: '$2',
+        fontWeight: '$6', // 480 or 540 per Figma spec
+      },
+      subtitle: {
+        fontFamily: '$heading',
+        fontSize: '$7', // 26px
+        lineHeight: '$4', // 1.35
+        letterSpacing: '$3', // -0.26
+        fontWeight: '$7', // 540
+      },
+      link: {
+        fontSize: '$3',
+        lineHeight: '$5',
+        color: '$color',
+        textDecorationLine: 'underline',
+      },
+      monoLabel: {
+        fontFamily: '$mono',
+        fontSize: '$4', // 18px
+        lineHeight: '$3', // 1.3
+        letterSpacing: '$1', // 0.54
+        fontWeight: '$1', // 400
+        textTransform: 'uppercase',
+      },
+    },
+  } as const,
 
-export function ThemedText({
-  style,
-  lightColor,
-  darkColor,
-  type = 'default',
-  ...rest
-}: ThemedTextProps) {
-  const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
-
-  return (
-    <Text
-      style={[
-        { color },
-        type === 'default' ? styles.default : undefined,
-        type === 'title' ? styles.title : undefined,
-        type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
-        type === 'subtitle' ? styles.subtitle : undefined,
-        type === 'link' ? styles.link : undefined,
-        style,
-      ]}
-      {...rest}
-    />
-  );
-}
-
-const styles = StyleSheet.create({
-  default: {
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  defaultSemiBold: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    lineHeight: 32,
-  },
-  subtitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  link: {
-    lineHeight: 30,
-    fontSize: 16,
-    color: '#0a7ea4',
+  defaultVariants: {
+    type: 'default',
   },
 });
+
+export type ThemedTextProps = GetProps<typeof ThemedText>;
