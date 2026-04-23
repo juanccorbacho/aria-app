@@ -4,16 +4,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useBills } from "@/hooks/useBills";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
+import { formatCurrencyBRL } from "@/utils/currency";
 import type { Bill, BillUrgency } from "@/types/models";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 
 type FilterStatus = "todas" | "pendentes" | "pagas";
-
-const formatCurrencyBRL = (valueCents: number): string => {
-  const value: number = valueCents / 100;
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
-};
 
 const formatDateBR = (isoDate: string): string => {
   const [year, month, day] = isoDate.split("-").map((chunk) => Number(chunk));
@@ -64,15 +60,14 @@ export default function BillsScreen(): React.JSX.Element {
 
   const [showForm, setShowForm] = useState<boolean>(false);
   const [filter, setFilter] = useState<FilterStatus>("todas");
-  const [description, setDescription] = useState<string>("");
+  const [name, setName] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
   const [dueDate, setDueDate] = useState<string>("");
-  const [urgency, setUrgency] = useState<BillUrgency>("medio");
-  const [paid, setPaid] = useState<boolean>(false);
-  const [recurring, setRecurring] = useState<boolean>(false);
+  const [priority, setPriority] = useState<BillUrgency>("MEDIUM");
+  const [status, setStatus] = useState<"PENDING" | "PAID">("PENDING");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const descriptionError = useMemo((): string | null => description.trim().length === 0 ? "Descrição é obrigatória" : null, [description]);
+  const nameError = useMemo((): string | null => name.trim().length === 0 ? "Nome é obrigatório" : null, [name]);
   const amountCents = useMemo(() => parseAmountToCents(amount), [amount]);
   const amountError = useMemo((): string | null => (amountCents === null || amountCents <= 0) ? "Valor deve ser maior que zero" : null, [amountCents]);
   const dueDateError = useMemo((): string | null => {
@@ -81,16 +76,16 @@ export default function BillsScreen(): React.JSX.Element {
     return null;
   }, [dueDate]);
 
-  const canSubmit = useMemo((): boolean => !descriptionError && !amountError && !dueDateError, [descriptionError, amountError, dueDateError]);
+  const canSubmit = useMemo((): boolean => !nameError && !amountError && !dueDateError, [nameError, amountError, dueDateError]);
 
   const filteredBills = useMemo((): Bill[] => {
     const base = bills.filter((bill) => {
-      if (filter === "pendentes") return !bill.paid;
-      if (filter === "pagas") return bill.paid;
+      if (filter === "pendentes") return bill.status === "PENDING";
+      if (filter === "pagas") return bill.status === "PAID";
       return true;
     });
     return [...base].sort((a, b) => {
-      if (a.paid !== b.paid) return a.paid ? 1 : -1;
+      if (a.status !== b.status) return a.status === "PAID" ? 1 : -1;
       return a.dueDate.localeCompare(b.dueDate);
     });
   }, [bills, filter]);
@@ -100,7 +95,7 @@ export default function BillsScreen(): React.JSX.Element {
     setIsSubmitting(true);
     try {
       await createBill({
-        description: description.trim(), amountCents, dueDate, urgency, paid, recurring,
+        name: name.trim(), amountCents, dueDate, priority, status,
       });
       handleCancel();
     } catch (error: unknown) {
@@ -111,7 +106,7 @@ export default function BillsScreen(): React.JSX.Element {
   };
 
   const handleCancel = (): void => {
-    setDescription(""); setAmount(""); setDueDate(""); setUrgency("medio"); setPaid(false); setRecurring(false); setShowForm(false);
+    setName(""); setAmount(""); setDueDate(""); setPriority("MEDIUM"); setStatus("PENDING"); setShowForm(false);
   };
 
   const handleDelete = (bill: Bill): void => {
@@ -180,8 +175,8 @@ export default function BillsScreen(): React.JSX.Element {
 
       {showForm && (
         <View className="bg-[#191a1b] border-[0.5px] border-white/10 rounded-2xl p-5 flex flex-col gap-4">
-          <TextInput value={description} onChangeText={setDescription} placeholder="Descrição" placeholderTextColor="#d0d6e0" className="bg-white/5 border-[0.5px] border-white/10 text-[#f7f8f8] rounded-xl p-4 font-[400]" />
-          {descriptionError && <ThemedText className="text-[#ef4444] text-xs font-[510]">{descriptionError}</ThemedText>}
+          <TextInput value={name} onChangeText={setName} placeholder="Nome da conta" placeholderTextColor="#d0d6e0" className="bg-white/5 border-[0.5px] border-white/10 text-[#f7f8f8] rounded-xl p-4 font-[400]" />
+          {nameError && <ThemedText className="text-[#ef4444] text-xs font-[510]">{nameError}</ThemedText>}
 
           <TextInput value={amount} onChangeText={(value) => setAmount(formatAmountInput(value))} placeholder="Valor (R$)" placeholderTextColor="#d0d6e0" keyboardType="decimal-pad" className="bg-white/5 border-[0.5px] border-white/10 text-[#f7f8f8] rounded-xl p-4 font-[400]" />
           {amountError && <ThemedText className="text-[#ef4444] text-xs font-[510]">{amountError}</ThemedText>}
@@ -190,13 +185,13 @@ export default function BillsScreen(): React.JSX.Element {
           {dueDateError && <ThemedText className="text-[#ef4444] text-xs font-[510]">{dueDateError}</ThemedText>}
 
           <View className="flex flex-row gap-3">
-            {["alto", "medio", "baixo"].map((value) => {
-              const label = value === "alto" ? "Alto" : value === "medio" ? "Médio" : "Baixo";
-              const active = urgency === value;
+            {["HIGH", "MEDIUM", "LOW"].map((value) => {
+              const label = value === "HIGH" ? "Alta" : value === "MEDIUM" ? "Média" : "Baixa";
+              const active = priority === value;
               return (
                 <TouchableOpacity
                   key={value}
-                  onPress={() => setUrgency(value as BillUrgency)}
+                  onPress={() => setPriority(value as BillUrgency)}
                   className={`flex-1 py-3 items-center rounded-full border-[0.5px] ${active ? "bg-white/10 border-white/20" : "border-white/5"}`}
                 >
                   <Text className={`font-[510] ${active ? "text-[#f7f8f8]" : "text-[#d0d6e0]"}`}>{label}</Text>
@@ -206,17 +201,10 @@ export default function BillsScreen(): React.JSX.Element {
           </View>
 
           <View className="flex flex-row items-center gap-3">
-            <TouchableOpacity onPress={() => setPaid((c) => !c)} className={`w-6 h-6 items-center justify-center rounded-md border-[0.5px] ${paid ? "bg-[#5e6ad2] border-[#5e6ad2]/80" : "border-white/20"}`}>
-              {paid && <Text className="text-[#f7f8f8] font-[590] text-xs">✓</Text>}
+            <TouchableOpacity onPress={() => setStatus((c) => c === "PAID" ? "PENDING" : "PAID")} className={`w-6 h-6 items-center justify-center rounded-md border-[0.5px] ${status === "PAID" ? "bg-[#5e6ad2] border-[#5e6ad2]/80" : "border-white/20"}`}>
+              {status === "PAID" && <Text className="text-[#f7f8f8] font-[590] text-xs">✓</Text>}
             </TouchableOpacity>
             <ThemedText className="font-[510] text-[#f7f8f8]">Pago</ThemedText>
-          </View>
-
-          <View className="flex flex-row items-center gap-3">
-            <TouchableOpacity onPress={() => setRecurring((c) => !c)} className={`w-6 h-6 items-center justify-center rounded-md border-[0.5px] ${recurring ? "bg-[#5e6ad2] border-[#5e6ad2]/80" : "border-white/20"}`}>
-              {recurring && <Text className="text-[#f7f8f8] font-[590] text-xs">✓</Text>}
-            </TouchableOpacity>
-            <ThemedText className="font-[510] text-[#f7f8f8]">Recorrente</ThemedText>
           </View>
 
           <View className="flex flex-col gap-3 mt-3">
@@ -246,26 +234,28 @@ export default function BillsScreen(): React.JSX.Element {
             </View>
           }
           renderItem={({ item: bill, index }) => {
-            const urgencyColorClass = bill.urgency === "alto" ? "text-[#ef4444]" : bill.urgency === "medio" ? "text-[#facc15]" : "text-[#10b981]";
-            const urgencyBgClass = bill.urgency === "alto" ? "bg-[#ef4444]/10 border-[#ef4444]/30" : bill.urgency === "medio" ? "bg-[#facc15]/10 border-[#facc15]/30" : "bg-[#10b981]/10 border-[#10b981]/30";
+            const urgencyColorClass = bill.priority === "HIGH" ? "text-[#ef4444]" : bill.priority === "MEDIUM" ? "text-[#facc15]" : "text-[#10b981]";
+            const urgencyBgClass = bill.priority === "HIGH" ? "bg-[#ef4444]/10 border-[#ef4444]/30" : bill.priority === "MEDIUM" ? "bg-[#facc15]/10 border-[#facc15]/30" : "bg-[#10b981]/10 border-[#10b981]/30";
+            
+            const translatedUrgency = bill.priority === "HIGH" ? "ALTA" : bill.priority === "MEDIUM" ? "MÉDIA" : "BAIXA";
 
             return (
               <View className={`bg-[#191a1b] px-4 flex flex-row items-center gap-4 py-4 border-x-[0.5px] border-white/10 ${index === 0 ? 'rounded-t-2xl border-t-[0.5px]' : ''} ${index === filteredBills.length - 1 ? 'rounded-b-2xl border-b-[0.5px]' : 'border-b-[0.5px]'}`}>
-                <TouchableOpacity onPress={() => handleTogglePaid(bill)} className={`w-6 h-6 items-center justify-center rounded-md border-[0.5px] ${bill.paid ? "bg-[#10b981] border-[#10b981]/80" : "border-white/20"}`}>
-                  {bill.paid && <Text className="text-[#f7f8f8] font-[590] text-xs">✓</Text>}
+                <TouchableOpacity onPress={() => handleTogglePaid(bill)} className={`w-6 h-6 items-center justify-center rounded-md border-[0.5px] ${bill.status === "PAID" ? "bg-[#10b981] border-[#10b981]/80" : "border-white/20"}`}>
+                  {bill.status === "PAID" && <Text className="text-[#f7f8f8] font-[590] text-xs">✓</Text>}
                 </TouchableOpacity>
 
                 <View className="flex-1 flex col gap-1">
-                  <ThemedText className="font-[510] text-[#f7f8f8]">{bill.description}</ThemedText>
+                  <ThemedText className="font-[510] text-[#f7f8f8]">{bill.name}</ThemedText>
                   <ThemedText className="text-xs text-[#d0d6e0] font-[400]">Vence em {formatDateBR(bill.dueDate)}</ThemedText>
                   <View className={`self-start mt-1 border-[0.5px] px-2 py-1 rounded-full ${urgencyBgClass}`}>
-                    <ThemedText type="monoLabel" className={`text-[10px] tracking-widest ${urgencyColorClass}`}>{bill.urgency.toUpperCase()}</ThemedText>
+                    <ThemedText type="monoLabel" className={`text-[10px] tracking-widest ${urgencyColorClass}`}>{translatedUrgency}</ThemedText>
                   </View>
                 </View>
 
                 <View className="items-end gap-2">
                   <ThemedText className="font-[590] tracking-tight text-[#f7f8f8]">{formatCurrencyBRL(bill.amountCents)}</ThemedText>
-                  <ThemedText className="text-xs text-[#d0d6e0] font-[400]">{bill.paid ? "Pago" : "Pendente"}</ThemedText>
+                  <ThemedText className="text-xs text-[#d0d6e0] font-[400]">{bill.status === "PAID" ? "Pago" : "Pendente"}</ThemedText>
                   <TouchableOpacity onPress={() => handleDelete(bill)} className="border-[0.5px] border-white/10 bg-white/5 rounded-full px-3 py-1">
                     <Text className="text-[#f7f8f8] text-[10px] font-[510]">Excluir</Text>
                   </TouchableOpacity>

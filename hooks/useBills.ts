@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import type { CreateBillInput } from "@/services/billService";
 import {
     createBill as createBillService,
@@ -15,14 +15,13 @@ type UseBillsReturn = {
   isLoading: boolean;
   errorMessage: string | null;
   refresh: () => void;
-  createBill: (input: Omit<CreateBillInput, "workspaceId">) => Promise<void>;
+  createBill: (input: Omit<CreateBillInput, "workspaceId" | "profileId">) => Promise<void>;
   togglePaid: (billId: string) => Promise<void>;
   deleteBill: (billId: string) => Promise<void>;
 };
 
 export const useBills = (): UseBillsReturn => {
-  const { user } = useAuth();
-  const workspaceId: string | undefined = user?.user_metadata?.workspace_id;
+  const { workspaceId, profileId, errorMessage: profileError, isLoading: isProfileLoading } = useProfile();
 
   const [bills, setBills] = useState<Bill[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -37,7 +36,7 @@ export const useBills = (): UseBillsReturn => {
     const run = async (): Promise<void> => {
       if (!workspaceId) {
         setIsLoading(false);
-        setErrorMessage("Usuário não autenticado.");
+        setErrorMessage(profileError ?? "Usuário não autenticado.");
         return;
       }
 
@@ -60,8 +59,8 @@ export const useBills = (): UseBillsReturn => {
   }, [workspaceId, refreshTick]);
 
   const createBill = useCallback(
-    async (input: Omit<CreateBillInput, "workspaceId">): Promise<void> => {
-      if (!workspaceId) {
+    async (input: Omit<CreateBillInput, "workspaceId" | "profileId">): Promise<void> => {
+      if (!workspaceId || !profileId) {
         setErrorMessage("Usuário não autenticado.");
         throw new Error("Usuário não autenticado.");
       }
@@ -69,12 +68,12 @@ export const useBills = (): UseBillsReturn => {
       try {
         const created = await createBillService({
           workspaceId,
-          description: input.description,
+          profileId,
+          name: input.name,
           amountCents: input.amountCents,
           dueDate: input.dueDate,
-          urgency: input.urgency,
-          paid: input.paid,
-          recurring: input.recurring,
+          priority: input.priority,
+          status: input.status,
         });
         setBills((current) => [created, ...current]);
       } catch (error: unknown) {
@@ -103,7 +102,7 @@ export const useBills = (): UseBillsReturn => {
         const updated = await toggleBillPaidService(
           billId,
           workspaceId,
-          !currentBill.paid,
+          currentBill.status === "PAID" ? "PENDING" : "PAID",
         );
         setBills((current) =>
           current.map((bill) => (bill.id === updated.id ? updated : bill)),
@@ -140,8 +139,8 @@ export const useBills = (): UseBillsReturn => {
 
   return {
     bills,
-    isLoading,
-    errorMessage,
+    isLoading: isProfileLoading || isLoading,
+    errorMessage: profileError || errorMessage,
     refresh,
     createBill,
     togglePaid,

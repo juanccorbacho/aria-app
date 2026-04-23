@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import type {
     CreateTransactionInput,
     UpdateTransactionInput,
@@ -19,17 +19,16 @@ type UseTransactionsReturn = {
   errorMessage: string | null;
   refresh: () => void;
   createTransaction: (
-    input: Omit<CreateTransactionInput, "workspaceId">,
+    input: Omit<CreateTransactionInput, "workspaceId" | "profileId">,
   ) => Promise<void>;
   updateTransaction: (
-    input: Omit<UpdateTransactionInput, "workspaceId">,
+    input: Omit<UpdateTransactionInput, "workspaceId" | "profileId">,
   ) => Promise<void>;
   deleteTransaction: (transactionId: string) => Promise<void>;
 };
 
 export const useTransactions = (): UseTransactionsReturn => {
-  const { user } = useAuth();
-  const workspaceId: string | undefined = user?.user_metadata?.workspace_id;
+  const { workspaceId, profileId, errorMessage: profileError, isLoading: isProfileLoading } = useProfile();
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -44,7 +43,7 @@ export const useTransactions = (): UseTransactionsReturn => {
     const run = async (): Promise<void> => {
       if (!workspaceId) {
         setIsLoading(false);
-        setErrorMessage("Usuário não autenticado.");
+        setErrorMessage(profileError ?? "Usuário não autenticado.");
         return;
       }
 
@@ -69,8 +68,8 @@ export const useTransactions = (): UseTransactionsReturn => {
   }, [workspaceId, refreshTick]);
 
   const createTransaction = useCallback(
-    async (input: Omit<CreateTransactionInput, "workspaceId">): Promise<void> => {
-      if (!workspaceId) {
+    async (input: Omit<CreateTransactionInput, "workspaceId" | "profileId">): Promise<void> => {
+      if (!workspaceId || !profileId) {
         setErrorMessage("Usuário não autenticado.");
         throw new Error("Usuário não autenticado.");
       }
@@ -78,11 +77,12 @@ export const useTransactions = (): UseTransactionsReturn => {
       try {
         const created = await createTransactionService({
           workspaceId,
+          profileId,
           description: input.description,
           category: input.category,
           amountCents: input.amountCents,
           type: input.type,
-          date: input.date,
+          occurredAt: input.occurredAt,
         });
         setTransactions((current) => [created, ...current]);
       } catch (error: unknown) {
@@ -96,8 +96,8 @@ export const useTransactions = (): UseTransactionsReturn => {
   );
 
   const updateTransaction = useCallback(
-    async (input: Omit<UpdateTransactionInput, "workspaceId">): Promise<void> => {
-      if (!workspaceId) {
+    async (input: Omit<UpdateTransactionInput, "workspaceId" | "profileId">): Promise<void> => {
+      if (!workspaceId || !profileId) {
         setErrorMessage("Usuário não autenticado.");
         throw new Error("Usuário não autenticado.");
       }
@@ -106,6 +106,7 @@ export const useTransactions = (): UseTransactionsReturn => {
         const updated = await updateTransactionService({
           ...input,
           workspaceId,
+          profileId,
         });
         setTransactions((current) =>
           current.map((transaction) =>
@@ -121,7 +122,7 @@ export const useTransactions = (): UseTransactionsReturn => {
         throw error;
       }
     },
-    [],
+    [workspaceId, profileId],
   );
 
   const deleteTransaction = useCallback(
@@ -148,8 +149,8 @@ export const useTransactions = (): UseTransactionsReturn => {
 
   return {
     transactions,
-    isLoading,
-    errorMessage,
+    isLoading: isProfileLoading || isLoading,
+    errorMessage: profileError || errorMessage,
     refresh,
     createTransaction,
     updateTransaction,

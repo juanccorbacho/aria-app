@@ -1,14 +1,14 @@
 import { supabase } from "@/services/supabase";
-import type { Bill, BillUrgency } from "@/types/models";
+import type { Bill, BillUrgency, BillStatus } from "@/types/models";
 
 export type CreateBillInput = {
   workspaceId: string;
-  description: string;
+  profileId: string;
+  name: string;
   amountCents: number;
   dueDate: string;
-  urgency: BillUrgency;
-  paid?: boolean;
-  recurring?: boolean;
+  status?: BillStatus;
+  priority: BillUrgency;
 };
 
 export const getBills = async (workspaceId: string): Promise<Bill[]> => {
@@ -29,13 +29,14 @@ export const getBills = async (workspaceId: string): Promise<Bill[]> => {
   const bills: Bill[] = data.map((row) => ({
     id: row.id as string,
     workspaceId: row.workspace_id as string,
-    description: row.description as string,
+    profileId: row.profile_id as string,
+    name: row.name as string,
     amountCents: row.amount_cents as number,
     dueDate: row.due_date as string,
-    paid: row.paid as boolean,
-    recurring: row.recurring as boolean,
-    urgency: (row.urgency as BillUrgency) ?? "medio",
+    status: row.status as BillStatus,
+    priority: (row.priority as BillUrgency) ?? "MEDIUM",
     createdAt: row.created_at as string,
+    updatedAt: (row.updated_at as string | null) ?? null,
   }));
 
   return bills;
@@ -44,12 +45,12 @@ export const getBills = async (workspaceId: string): Promise<Bill[]> => {
 export const createBill = async (input: CreateBillInput): Promise<Bill> => {
   const payload = {
     workspace_id: input.workspaceId,
-    description: input.description,
+    profile_id: input.profileId,
+    name: input.name,
     amount_cents: input.amountCents,
     due_date: input.dueDate,
-    urgency: input.urgency,
-    paid: input.paid ?? false,
-    recurring: input.recurring ?? false,
+    status: input.status ?? "PENDING",
+    priority: input.priority,
   };
 
   const { data, error } = await supabase
@@ -67,13 +68,14 @@ export const createBill = async (input: CreateBillInput): Promise<Bill> => {
   const bill: Bill = {
     id: row.id as string,
     workspaceId: row.workspace_id as string,
-    description: row.description as string,
+    profileId: row.profile_id as string,
+    name: row.name as string,
     amountCents: row.amount_cents as number,
     dueDate: row.due_date as string,
-    paid: row.paid as boolean,
-    recurring: row.recurring as boolean,
-    urgency: (row.urgency as BillUrgency) ?? "medio",
+    status: row.status as BillStatus,
+    priority: (row.priority as BillUrgency) ?? "MEDIUM",
     createdAt: row.created_at as string,
+    updatedAt: (row.updated_at as string | null) ?? null,
   };
 
   return bill;
@@ -82,11 +84,11 @@ export const createBill = async (input: CreateBillInput): Promise<Bill> => {
 export const toggleBillPaid = async (
   billId: string,
   workspaceId: string,
-  paid: boolean,
+  status: BillStatus,
 ): Promise<Bill> => {
   const { data, error } = await supabase
     .from("bills")
-    .update({ paid })
+    .update({ status })
     .eq("id", billId)
     .eq("workspace_id", workspaceId)
     .select()
@@ -99,13 +101,14 @@ export const toggleBillPaid = async (
   return {
     id: data.id as string,
     workspaceId: data.workspace_id as string,
-    description: data.description as string,
+    profileId: data.profile_id as string,
+    name: data.name as string,
     amountCents: data.amount_cents as number,
     dueDate: data.due_date as string,
-    paid: data.paid as boolean,
-    recurring: data.recurring as boolean,
-    urgency: (data.urgency as BillUrgency) ?? "medio",
+    status: data.status as BillStatus,
+    priority: (data.priority as BillUrgency) ?? "MEDIUM",
     createdAt: data.created_at as string,
+    updatedAt: (data.updated_at as string | null) ?? null,
   };
 };
 

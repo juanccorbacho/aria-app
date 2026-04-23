@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import type { CreateTaskInput, UpdateTaskInput } from "@/services/taskService";
 import {
     createTask as createTaskService,
@@ -16,15 +16,14 @@ type UseTasksReturn = {
   isLoading: boolean;
   errorMessage: string | null;
   refresh: () => void;
-  createTask: (input: Omit<CreateTaskInput, "workspaceId">) => Promise<void>;
+  createTask: (input: Omit<CreateTaskInput, "workspaceId" | "profileId">) => Promise<void>;
   updateTask: (input: UpdateTaskInput) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   toggleTask: (taskId: string) => Promise<void>;
 };
 
 export const useTasks = (): UseTasksReturn => {
-  const { user } = useAuth();
-  const workspaceId: string | undefined = user?.user_metadata?.workspace_id;
+  const { workspaceId, profileId, errorMessage: profileError, isLoading: isProfileLoading } = useProfile();
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -39,7 +38,7 @@ export const useTasks = (): UseTasksReturn => {
     const run = async (): Promise<void> => {
       if (!workspaceId) {
         setIsLoading(false);
-        setErrorMessage("Usuário não autenticado.");
+        setErrorMessage(profileError ?? "Usuário não autenticado.");
         return;
       }
 
@@ -62,8 +61,8 @@ export const useTasks = (): UseTasksReturn => {
   }, [workspaceId, refreshTick]);
 
   const createTask = useCallback(
-    async (input: Omit<CreateTaskInput, "workspaceId">): Promise<void> => {
-      if (!workspaceId) {
+    async (input: Omit<CreateTaskInput, "workspaceId" | "profileId">): Promise<void> => {
+      if (!workspaceId || !profileId) {
         setErrorMessage("Usuário não autenticado.");
         throw new Error("Usuário não autenticado.");
       }
@@ -71,6 +70,7 @@ export const useTasks = (): UseTasksReturn => {
       try {
         const created = await createTaskService({
           workspaceId,
+          profileId,
           title: input.title,
           dueDate: input.dueDate,
         });
@@ -82,7 +82,7 @@ export const useTasks = (): UseTasksReturn => {
         throw error;
       }
     },
-    [workspaceId],
+    [workspaceId, profileId],
   );
 
   const updateTask = useCallback(
@@ -164,8 +164,8 @@ export const useTasks = (): UseTasksReturn => {
 
   return {
     tasks,
-    isLoading,
-    errorMessage,
+    isLoading: isProfileLoading || isLoading,
+    errorMessage: profileError || errorMessage,
     refresh,
     createTask,
     updateTask,

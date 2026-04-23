@@ -4,14 +4,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { useTransactions } from "@/hooks/useTransactions";
+import { formatCurrencyBRL } from "@/utils/currency";
 import type { Transaction, TransactionType } from "@/types/models";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-
-const formatCurrencyBRL = (valueCents: number): string => {
-  const value: number = valueCents / 100;
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
-};
 
 const formatDateBR = (isoDate: string): string => {
   const [year, month, day] = isoDate.split("-").map((chunk) => Number(chunk));
@@ -63,13 +59,13 @@ export default function TransactionsScreen(): React.JSX.Element {
   const [showForm, setShowForm] = useState<boolean>(false);
   const [description, setDescription] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
-  const [type, setType] = useState<TransactionType>("entrada");
+  const [type, setType] = useState<TransactionType>("INCOME");
   const [category, setCategory] = useState<string>("");
   const [date, setDate] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const orderedTransactions = useMemo((): Transaction[] => {
-    return [...transactions].sort((a, b) => b.date.localeCompare(a.date));
+    return [...transactions].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
   }, [transactions]);
 
   const descriptionError = useMemo((): string | null => description.trim().length === 0 ? "Descrição é obrigatória" : null, [description]);
@@ -89,7 +85,7 @@ export default function TransactionsScreen(): React.JSX.Element {
     setIsSubmitting(true);
     try {
       await createTransaction({
-        description: description.trim(), amountCents, type, date,
+        description: description.trim(), amountCents, type, occurredAt: date,
         category: category.trim().length > 0 ? category.trim() : null,
       });
       handleCancel();
@@ -101,7 +97,7 @@ export default function TransactionsScreen(): React.JSX.Element {
   };
 
   const handleCancel = (): void => {
-    setDescription(""); setAmount(""); setCategory(""); setDate(""); setType("entrada"); setShowForm(false);
+    setDescription(""); setAmount(""); setCategory(""); setDate(""); setType("INCOME"); setShowForm(false);
   };
 
   const handleDelete = (transaction: Transaction): void => {
@@ -156,11 +152,11 @@ export default function TransactionsScreen(): React.JSX.Element {
           {amountError && <ThemedText className="text-[#ef4444] text-xs font-[510]">{amountError}</ThemedText>}
 
           <View className="flex flex-row gap-3">
-            <TouchableOpacity onPress={() => setType("entrada")} className={`flex-1 items-center py-3 rounded-full border-[0.5px] ${type === "entrada" ? "bg-white/10 border-white/20" : "border-white/5"}`}>
-              <Text className={`font-[510] ${type === "entrada" ? "text-[#10b981]" : "text-[#d0d6e0]"}`}>Entrada</Text>
+            <TouchableOpacity onPress={() => setType("INCOME")} className={`flex-1 items-center py-3 rounded-full border-[0.5px] ${type === "INCOME" ? "bg-white/10 border-white/20" : "border-white/5"}`}>
+              <Text className={`font-[510] ${type === "INCOME" ? "text-[#10b981]" : "text-[#d0d6e0]"}`}>Receita</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setType("saida")} className={`flex-1 items-center py-3 rounded-full border-[0.5px] ${type === "saida" ? "bg-white/10 border-white/20" : "border-white/5"}`}>
-              <Text className={`font-[510] ${type === "saida" ? "text-[#ef4444]" : "text-[#d0d6e0]"}`}>Saída</Text>
+            <TouchableOpacity onPress={() => setType("EXPENSE")} className={`flex-1 items-center py-3 rounded-full border-[0.5px] ${type === "EXPENSE" ? "bg-white/10 border-white/20" : "border-white/5"}`}>
+              <Text className={`font-[510] ${type === "EXPENSE" ? "text-[#ef4444]" : "text-[#d0d6e0]"}`}>Despesa</Text>
             </TouchableOpacity>
           </View>
 
@@ -195,17 +191,17 @@ export default function TransactionsScreen(): React.JSX.Element {
             </View>
           }
           renderItem={({ item: transaction, index }) => {
-            const isIncome = transaction.type === "entrada";
+            const isIncome = transaction.type === "INCOME";
             return (
               <View className={`bg-[#191a1b] px-4 flex flex-row items-center gap-4 py-4 border-x-[0.5px] border-white/10 ${index === 0 ? 'rounded-t-2xl border-t-[0.5px]' : ''} ${index === orderedTransactions.length - 1 ? 'rounded-b-2xl border-b-[0.5px]' : 'border-b-[0.5px]'}`}>
                 <View className="flex-1 flex col gap-1">
                   <ThemedText className="font-[510] text-[#f7f8f8]">{transaction.description}</ThemedText>
-                  <ThemedText className="text-xs text-[#d0d6e0] font-[400]">{transaction.category ?? "Sem categoria"} · {formatDateBR(transaction.date)}</ThemedText>
+                  <ThemedText className="text-xs text-[#d0d6e0] font-[400]">{transaction.category ?? "Sem categoria"} · {formatDateBR(transaction.occurredAt)}</ThemedText>
                 </View>
 
                 <View className="items-end gap-1">
                   <ThemedText className={`font-[590] tracking-tight ${isIncome ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>{isIncome ? "+" : "-"}{formatCurrencyBRL(Math.abs(transaction.amountCents))}</ThemedText>
-                  <ThemedText className="text-xs text-[#d0d6e0] font-[400]">{isIncome ? "Entrada" : "Saída"}</ThemedText>
+                  <ThemedText className="text-xs text-[#d0d6e0] font-[400]">{isIncome ? "Receita" : "Despesa"}</ThemedText>
                   <TouchableOpacity onPress={() => handleDelete(transaction)} className="border-[0.5px] border-white/10 bg-white/5 rounded-full px-3 py-1">
                     <Text className="text-[#f7f8f8] text-[10px] font-[510]">Excluir</Text>
                   </TouchableOpacity>

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import { getBills } from "@/services/billService";
-import { getProfile } from "@/services/profileService";
+
 import { getTasks } from "@/services/taskService";
 import { getTransactions } from "@/services/transactionService";
 import type {
@@ -25,18 +25,16 @@ type UseDashboardReturn = {
 };
 
 const isIncomeType = (type: TransactionType): boolean => {
-  return type === "entrada";
+  return type === "INCOME";
 };
 
 const isExpenseType = (type: TransactionType): boolean => {
-  return type === "saida";
+  return type === "EXPENSE";
 };
 
 export const useDashboard = (): UseDashboardReturn => {
-  const { user } = useAuth();
-  const workspaceId: string | undefined = user?.user_metadata?.workspace_id;
+  const { workspaceId, profile, isLoading: isProfileLoading, errorMessage: profileError } = useProfile();
 
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [saldoMesCents, setSaldoMesCents] = useState<number>(0);
   const [totalPendentesCents, setTotalPendentesCents] = useState<number>(0);
   const [urgentBills, setUrgentBills] = useState<Bill[]>([]);
@@ -56,7 +54,7 @@ export const useDashboard = (): UseDashboardReturn => {
     const run = async (): Promise<void> => {
       if (!workspaceId) {
         setIsLoading(false);
-        setErrorMessage("Usuário não autenticado.");
+        setErrorMessage(profileError ?? "Usuário sem workspace vinculado.");
         return;
       }
 
@@ -64,9 +62,8 @@ export const useDashboard = (): UseDashboardReturn => {
       setErrorMessage(null);
 
       try {
-        const [profileData, transactionsData, billsData, tasksData] =
+        const [transactionsData, billsData, tasksData] =
           await Promise.all([
-            getProfile(),
             getTransactions(workspaceId),
             getBills(workspaceId),
             getTasks(workspaceId),
@@ -80,7 +77,7 @@ export const useDashboard = (): UseDashboardReturn => {
 
         const currentMonthTransactions = transactionsData.filter(
           (transaction) =>
-            transaction.date >= startISO && transaction.date <= endISO,
+            transaction.occurredAt >= startISO && transaction.occurredAt <= endISO,
         );
 
         const entradasCents: number = currentMonthTransactions
@@ -92,16 +89,16 @@ export const useDashboard = (): UseDashboardReturn => {
           .reduce((acc, t) => acc + t.amountCents, 0);
 
         const totalBillsCents: number = billsData
-          .filter((b) => !b.paid)
+          .filter((b) => b.status === "PENDING")
           .reduce((acc, b) => acc + b.amountCents, 0);
 
         const urgentBillsData = billsData.filter(
-          (bill) => bill.urgency === "alto" && !bill.paid,
+          (bill) => bill.priority === "HIGH" && bill.status === "PENDING",
         );
 
         const pendingTasks = tasksData.filter((task) => !task.completed).length;
 
-        setProfile(profileData);
+
         setSaldoMesCents(entradasCents - saidasCents);
         setTotalPendentesCents(totalBillsCents);
         setUrgentBills(urgentBillsData);
@@ -119,7 +116,7 @@ export const useDashboard = (): UseDashboardReturn => {
     };
 
     void run();
-  }, [workspaceId, refreshTick]);
+  }, [workspaceId, profileError, refreshTick]);
 
   return {
     profile,
@@ -128,8 +125,8 @@ export const useDashboard = (): UseDashboardReturn => {
     urgentBills,
     pendingTasksCount,
     recentTransactions,
-    isLoading,
-    errorMessage,
+    isLoading: isProfileLoading || isLoading,
+    errorMessage: profileError || errorMessage,
     refresh,
   };
 };

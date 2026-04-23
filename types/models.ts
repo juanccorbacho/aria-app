@@ -7,31 +7,37 @@ export type Profile = {
   updatedAt: string | null;
 };
 
-export type TransactionType = "entrada" | "saida";
+export type TransactionType = "INCOME" | "EXPENSE";
 
-export type BillUrgency = "alto" | "medio" | "baixo";
+export type BillUrgency = "HIGH" | "MEDIUM" | "LOW";
+
+export type SplitType = "equal" | "percentage" | "fixed";
 
 export type Transaction = {
   id: string;
   workspaceId: string;
-  description: string;
+  profileId: string;
+  description: string | null;
   category: string | null;
   amountCents: number;
   type: TransactionType;
-  date: string;
+  occurredAt: string;
   createdAt: string;
 };
+
+export type BillStatus = "PENDING" | "PAID";
 
 export type Bill = {
   id: string;
   workspaceId: string;
-  description: string;
+  profileId: string;
+  name: string;
   amountCents: number;
   dueDate: string;
-  paid: boolean;
-  recurring: boolean;
-  urgency: BillUrgency;
+  status: BillStatus;
+  priority: BillUrgency;
   createdAt: string;
+  updatedAt: string | null;
 };
 
 export type Task = {

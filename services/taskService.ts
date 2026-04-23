@@ -12,6 +12,7 @@ type TaskRow = {
 
 export type CreateTaskInput = {
   workspaceId: string;
+  profileId: string;
   title: string;
   dueDate?: string | null;
 };
@@ -56,6 +57,7 @@ export const getTasks = async (workspaceId: string): Promise<Task[]> => {
 export const createTask = async (input: CreateTaskInput): Promise<Task> => {
   const payload = {
     workspace_id: input.workspaceId,
+    profile_id: input.profileId,
     title: input.title,
     completed: false,
     due_date: input.dueDate ?? null,

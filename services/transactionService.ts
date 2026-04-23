@@ -3,21 +3,23 @@ import type { Transaction, TransactionType } from "@/types/models";
 
 export type CreateTransactionInput = {
   workspaceId: string;
-  description: string;
+  profileId: string;
+  description?: string | null;
   category?: string | null;
   amountCents: number;
   type: TransactionType;
-  date: string;
+  occurredAt: string;
 };
 
 export type UpdateTransactionInput = {
   workspaceId: string;
+  profileId: string;
   transactionId: string;
-  description?: string;
+  description?: string | null;
   category?: string | null;
   amountCents?: number;
   type?: TransactionType;
-  date?: string;
+  occurredAt?: string;
 };
 
 export const getTransactions = async (
@@ -27,7 +29,7 @@ export const getTransactions = async (
     .from("transactions")
     .select("*")
     .eq("workspace_id", workspaceId)
-    .order("date", { ascending: false });
+    .order("occurred_at", { ascending: false });
 
   if (error) {
     throw new Error(error.message);
@@ -40,11 +42,12 @@ export const getTransactions = async (
   const transactions: Transaction[] = data.map((row) => ({
     id: row.id as string,
     workspaceId: row.workspace_id as string,
-    description: row.description as string,
+    profileId: row.profile_id as string,
+    description: (row.description as string | null) ?? null,
     category: (row.category as string | null) ?? null,
     amountCents: row.amount_cents as number,
     type: row.type as TransactionType,
-    date: row.date as string,
+    occurredAt: row.occurred_at as string,
     createdAt: row.created_at as string,
   }));
 
@@ -56,11 +59,12 @@ export const createTransaction = async (
 ): Promise<Transaction> => {
   const payload = {
     workspace_id: input.workspaceId,
-    description: input.description,
+    profile_id: input.profileId,
+    description: input.description ?? null,
     category: input.category ?? null,
     amount_cents: input.amountCents,
     type: input.type,
-    date: input.date,
+    occurred_at: input.occurredAt,
   };
 
   const { data, error } = await supabase
@@ -78,11 +82,12 @@ export const createTransaction = async (
   const transaction: Transaction = {
     id: row.id as string,
     workspaceId: row.workspace_id as string,
-    description: row.description as string,
+    profileId: row.profile_id as string,
+    description: (row.description as string | null) ?? null,
     category: (row.category as string | null) ?? null,
     amountCents: row.amount_cents as number,
     type: row.type as TransactionType,
-    date: row.date as string,
+    occurredAt: row.occurred_at as string,
     createdAt: row.created_at as string,
   };
 
@@ -93,11 +98,11 @@ export const updateTransaction = async (
   input: UpdateTransactionInput,
 ): Promise<Transaction> => {
   const payload: Partial<{
-    description: string;
+    description: string | null;
     category: string | null;
     amount_cents: number;
     type: TransactionType;
-    date: string;
+    occurred_at: string;
   }> = {};
 
   if (input.description !== undefined) {
@@ -116,8 +121,8 @@ export const updateTransaction = async (
     payload.type = input.type;
   }
 
-  if (input.date !== undefined) {
-    payload.date = input.date;
+  if (input.occurredAt !== undefined) {
+    payload.occurred_at = input.occurredAt;
   }
 
   if (Object.keys(payload).length === 0) {
@@ -139,11 +144,12 @@ export const updateTransaction = async (
   return {
     id: data.id as string,
     workspaceId: data.workspace_id as string,
-    description: data.description as string,
+    profileId: data.profile_id as string,
+    description: (data.description as string | null) ?? null,
     category: (data.category as string | null) ?? null,
     amountCents: data.amount_cents as number,
     type: data.type as TransactionType,
-    date: data.date as string,
+    occurredAt: data.occurred_at as string,
     createdAt: data.created_at as string,
   };
 };

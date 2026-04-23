@@ -5,32 +5,26 @@ import { ActivityIndicator, Alert, ScrollView, View, TouchableOpacity, Text } fr
 import { useAuth } from "@/hooks/useAuth";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
+import { formatCurrencyBRL } from "@/utils/currency";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 
-type DueUrgency = "alto" | "medio" | "baixo";
+import type { BillUrgency, TransactionType } from "@/types/models";
 
 type DueItem = {
   id: string;
   name: string;
   amountCents: number;
   dueDateISO: string;
-  urgency: DueUrgency;
+  urgency: BillUrgency;
 };
-
-type TransactionType = "entrada" | "saida";
 
 type TransactionItem = {
   id: string;
-  description: string;
+  description: string | null;
   amountCents: number;
   type: TransactionType;
-  date: string;
-};
-
-const formatCurrencyBRL = (valueCents: number): string => {
-  const value: number = valueCents / 100;
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+  occurredAt: string;
 };
 
 const formatDateBR = (isoDate: string): string => {
@@ -85,13 +79,13 @@ export default function DashboardScreen(): React.JSX.Element {
   }
 
   const contasUrgentes: DueItem[] = urgentBills.map((bill) => ({
-    id: bill.id, name: bill.description, amountCents: bill.amountCents,
-    dueDateISO: bill.dueDate, urgency: bill.urgency,
+    id: bill.id, name: bill.name, amountCents: bill.amountCents,
+    dueDateISO: bill.dueDate, urgency: bill.priority,
   }));
 
   const ultimasTransacoes: TransactionItem[] = recentTransactions.map((t) => ({
     id: t.id, description: t.description, amountCents: t.amountCents,
-    type: t.type, date: t.date,
+    type: t.type, occurredAt: t.occurredAt,
   }));
 
   const containerStyle = { maxWidth: isDesktop ? "100%" as const : 720 };
@@ -149,12 +143,12 @@ export default function DashboardScreen(): React.JSX.Element {
                   <ThemedText className="text-center py-5 text-[#d0d6e0] font-[400]">Nenhuma transação recente.</ThemedText>
                 ) : (
                   ultimasTransacoes.map((t, index) => {
-                    const isIncome = t.type === "entrada";
+                    const isIncome = t.type === "INCOME";
                     return (
                       <View key={t.id} className={`flex flex-row items-center justify-between py-3 ${index === ultimasTransacoes.length - 1 ? '' : 'border-b-[0.5px] border-white/10'}`}>
                         <View className="flex-1 pr-3 flex col gap-1">
-                          <ThemedText className="font-[510] text-[#f7f8f8]">{t.description}</ThemedText>
-                          <ThemedText className="text-xs text-[#d0d6e0] font-[400]">{formatDateBR(t.date)} · {isIncome ? "Entrada" : "Saída"}</ThemedText>
+                          <ThemedText className="font-[510] text-[#f7f8f8]">{t.description ?? "Sem descrição"}</ThemedText>
+                          <ThemedText className="text-xs text-[#d0d6e0] font-[400]">{formatDateBR(t.occurredAt)} · {isIncome ? "Receita" : "Despesa"}</ThemedText>
                         </View>
                         <View className="items-end gap-1">
                           <ThemedText className={`font-[590] ${isIncome ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>{isIncome ? "+" : "-"}{formatCurrencyBRL(Math.abs(t.amountCents))}</ThemedText>
