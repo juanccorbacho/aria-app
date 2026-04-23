@@ -19,17 +19,17 @@ type UseTransactionsReturn = {
   errorMessage: string | null;
   refresh: () => void;
   createTransaction: (
-    input: Omit<CreateTransactionInput, "userId">,
+    input: Omit<CreateTransactionInput, "workspaceId">,
   ) => Promise<void>;
   updateTransaction: (
-    input: Omit<UpdateTransactionInput, "userId">,
+    input: Omit<UpdateTransactionInput, "workspaceId">,
   ) => Promise<void>;
   deleteTransaction: (transactionId: string) => Promise<void>;
 };
 
 export const useTransactions = (): UseTransactionsReturn => {
   const { user } = useAuth();
-  const userId: string | undefined = user?.id;
+  const workspaceId: string | undefined = user?.user_metadata?.workspace_id;
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -42,7 +42,7 @@ export const useTransactions = (): UseTransactionsReturn => {
 
   useEffect(() => {
     const run = async (): Promise<void> => {
-      if (!userId) {
+      if (!workspaceId) {
         setIsLoading(false);
         setErrorMessage("Usuário não autenticado.");
         return;
@@ -52,7 +52,7 @@ export const useTransactions = (): UseTransactionsReturn => {
       setErrorMessage(null);
 
       try {
-        const data = await getTransactions(userId);
+        const data = await getTransactions(workspaceId);
         setTransactions(data);
         setIsLoading(false);
       } catch (error: unknown) {
@@ -66,18 +66,18 @@ export const useTransactions = (): UseTransactionsReturn => {
     };
 
     void run();
-  }, [userId, refreshTick]);
+  }, [workspaceId, refreshTick]);
 
   const createTransaction = useCallback(
-    async (input: Omit<CreateTransactionInput, "userId">): Promise<void> => {
-      if (!userId) {
+    async (input: Omit<CreateTransactionInput, "workspaceId">): Promise<void> => {
+      if (!workspaceId) {
         setErrorMessage("Usuário não autenticado.");
         throw new Error("Usuário não autenticado.");
       }
 
       try {
         const created = await createTransactionService({
-          userId,
+          workspaceId,
           description: input.description,
           category: input.category,
           amountCents: input.amountCents,
@@ -92,12 +92,12 @@ export const useTransactions = (): UseTransactionsReturn => {
         throw error;
       }
     },
-    [userId],
+    [workspaceId],
   );
 
   const updateTransaction = useCallback(
-    async (input: Omit<UpdateTransactionInput, "userId">): Promise<void> => {
-      if (!userId) {
+    async (input: Omit<UpdateTransactionInput, "workspaceId">): Promise<void> => {
+      if (!workspaceId) {
         setErrorMessage("Usuário não autenticado.");
         throw new Error("Usuário não autenticado.");
       }
@@ -105,7 +105,7 @@ export const useTransactions = (): UseTransactionsReturn => {
       try {
         const updated = await updateTransactionService({
           ...input,
-          userId,
+          workspaceId,
         });
         setTransactions((current) =>
           current.map((transaction) =>
@@ -126,13 +126,13 @@ export const useTransactions = (): UseTransactionsReturn => {
 
   const deleteTransaction = useCallback(
     async (transactionId: string): Promise<void> => {
-      if (!userId) {
+      if (!workspaceId) {
         setErrorMessage("Usuário não autenticado.");
         throw new Error("Usuário não autenticado.");
       }
 
       try {
-        await deleteTransactionService(transactionId, userId);
+        await deleteTransactionService(transactionId, workspaceId);
         setTransactions((current) =>
           current.filter((transaction) => transaction.id !== transactionId),
         );
@@ -143,7 +143,7 @@ export const useTransactions = (): UseTransactionsReturn => {
         throw error;
       }
     },
-    [userId],
+    [workspaceId],
   );
 
   return {

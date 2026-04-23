@@ -1,7 +1,8 @@
-import { GetProps, View as TamaguiView, styled } from 'tamagui';
+import { View, ViewProps } from 'react-native';
 
-export const ThemedView = styled(TamaguiView, {
-  backgroundColor: '$background',
-});
+export type ThemedViewProps = ViewProps & { className?: string };
 
-export type ThemedViewProps = GetProps<typeof ThemedView>;
+export function ThemedView({ className, style, ...props }: ThemedViewProps) {
+  // Using pure NativeWind v4 className
+  return <View className={`${className || ''}`} style={style} {...props} />;
+}

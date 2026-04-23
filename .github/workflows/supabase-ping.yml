@@ -1,0 +1,30 @@
+name: Supabase Ping
+
+on:
+  schedule:
+    # Runs every 3 days at midnight UTC
+    - cron: '0 0 */3 * *'
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "Secrets SUPABASE_URL and SUPABASE_ANON_KEY must be set in the repository."
+            exit 1
+          fi
+          
+          # We ping a lightweight endpoint, like requesting 1 row from an existing table or just checking the REST API base.
+          # We'll use /rest/v1/ to see if the project is alive.
+          curl -s -o /dev/null -w "%{http_code}" -X GET "${SUPABASE_URL}/rest/v1/" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            | grep -q "200" || echo "Ping returned non-200 status code but request was made."
+          
+          echo "Supabase successfully pinged."

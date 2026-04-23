@@ -34,7 +34,7 @@ const isExpenseType = (type: TransactionType): boolean => {
 
 export const useDashboard = (): UseDashboardReturn => {
   const { user } = useAuth();
-  const userId: string | undefined = user?.id;
+  const workspaceId: string | undefined = user?.user_metadata?.workspace_id;
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [saldoMesCents, setSaldoMesCents] = useState<number>(0);
@@ -54,7 +54,7 @@ export const useDashboard = (): UseDashboardReturn => {
 
   useEffect(() => {
     const run = async (): Promise<void> => {
-      if (!userId) {
+      if (!workspaceId) {
         setIsLoading(false);
         setErrorMessage("Usuário não autenticado.");
         return;
@@ -66,10 +66,10 @@ export const useDashboard = (): UseDashboardReturn => {
       try {
         const [profileData, transactionsData, billsData, tasksData] =
           await Promise.all([
-            getProfile(userId),
-            getTransactions(userId),
-            getBills(userId),
-            getTasks(userId),
+            getProfile(),
+            getTransactions(workspaceId),
+            getBills(workspaceId),
+            getTasks(workspaceId),
           ]);
 
         const now = new Date();
@@ -119,7 +119,7 @@ export const useDashboard = (): UseDashboardReturn => {
     };
 
     void run();
-  }, [userId, refreshTick]);
+  }, [workspaceId, refreshTick]);
 
   return {
     profile,

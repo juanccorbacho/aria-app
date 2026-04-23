@@ -1,6 +1,6 @@
 export type Profile = {
   id: string;
-  userId: string;
+  workspaceId: string;
   fullName: string;
   email: string | null;
   createdAt: string;
@@ -13,7 +13,7 @@ export type BillUrgency = "alto" | "medio" | "baixo";
 
 export type Transaction = {
   id: string;
-  userId: string;
+  workspaceId: string;
   description: string;
   category: string | null;
   amountCents: number;
@@ -24,7 +24,7 @@ export type Transaction = {
 
 export type Bill = {
   id: string;
-  userId: string;
+  workspaceId: string;
   description: string;
   amountCents: number;
   dueDate: string;
@@ -36,7 +36,7 @@ export type Bill = {
 
 export type Task = {
   id: string;
-  userId: string;
+  workspaceId: string;
   title: string;
   completed: boolean;
   dueDate: string | null;

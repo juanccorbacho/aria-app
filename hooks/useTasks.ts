@@ -16,7 +16,7 @@ type UseTasksReturn = {
   isLoading: boolean;
   errorMessage: string | null;
   refresh: () => void;
-  createTask: (input: Omit<CreateTaskInput, "userId">) => Promise<void>;
+  createTask: (input: Omit<CreateTaskInput, "workspaceId">) => Promise<void>;
   updateTask: (input: UpdateTaskInput) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
   toggleTask: (taskId: string) => Promise<void>;
@@ -24,7 +24,7 @@ type UseTasksReturn = {
 
 export const useTasks = (): UseTasksReturn => {
   const { user } = useAuth();
-  const userId: string | undefined = user?.id;
+  const workspaceId: string | undefined = user?.user_metadata?.workspace_id;
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -37,7 +37,7 @@ export const useTasks = (): UseTasksReturn => {
 
   useEffect(() => {
     const run = async (): Promise<void> => {
-      if (!userId) {
+      if (!workspaceId) {
         setIsLoading(false);
         setErrorMessage("Usuário não autenticado.");
         return;
@@ -47,7 +47,7 @@ export const useTasks = (): UseTasksReturn => {
       setErrorMessage(null);
 
       try {
-        const tasksData = await getTasks(userId);
+        const tasksData = await getTasks(workspaceId);
         setTasks(tasksData);
         setIsLoading(false);
       } catch (error: unknown) {
@@ -59,18 +59,18 @@ export const useTasks = (): UseTasksReturn => {
     };
 
     void run();
-  }, [userId, refreshTick]);
+  }, [workspaceId, refreshTick]);
 
   const createTask = useCallback(
-    async (input: Omit<CreateTaskInput, "userId">): Promise<void> => {
-      if (!userId) {
+    async (input: Omit<CreateTaskInput, "workspaceId">): Promise<void> => {
+      if (!workspaceId) {
         setErrorMessage("Usuário não autenticado.");
         throw new Error("Usuário não autenticado.");
       }
 
       try {
         const created = await createTaskService({
-          userId,
+          workspaceId,
           title: input.title,
           dueDate: input.dueDate,
         });
@@ -82,12 +82,12 @@ export const useTasks = (): UseTasksReturn => {
         throw error;
       }
     },
-    [userId],
+    [workspaceId],
   );
 
   const updateTask = useCallback(
     async (input: UpdateTaskInput): Promise<void> => {
-      if (!userId) {
+      if (!workspaceId) {
         setErrorMessage("Usuário não autenticado.");
         throw new Error("Usuário não autenticado.");
       }
@@ -95,7 +95,7 @@ export const useTasks = (): UseTasksReturn => {
       try {
         const updated = await updateTaskService({
           ...input,
-          userId,
+          workspaceId,
         });
         setTasks((current) =>
           current.map((task) => (task.id === updated.id ? updated : task)),
@@ -107,18 +107,18 @@ export const useTasks = (): UseTasksReturn => {
         throw error;
       }
     },
-    [userId],
+    [workspaceId],
   );
 
   const deleteTask = useCallback(
     async (taskId: string): Promise<void> => {
-      if (!userId) {
+      if (!workspaceId) {
         setErrorMessage("Usuário não autenticado.");
         throw new Error("Usuário não autenticado.");
       }
 
       try {
-        await deleteTaskService(taskId, userId);
+        await deleteTaskService(taskId, workspaceId);
         setTasks((current) => current.filter((task) => task.id !== taskId));
       } catch (error: unknown) {
         setErrorMessage(
@@ -127,12 +127,12 @@ export const useTasks = (): UseTasksReturn => {
         throw error;
       }
     },
-    [userId],
+    [workspaceId],
   );
 
   const toggleTask = useCallback(
     async (taskId: string): Promise<void> => {
-      if (!userId) {
+      if (!workspaceId) {
         setErrorMessage("Usuário não autenticado.");
         throw new Error("Usuário não autenticado.");
       }
@@ -146,7 +146,7 @@ export const useTasks = (): UseTasksReturn => {
       try {
         const updated = await toggleTaskService(
           taskId,
-          userId,
+          workspaceId,
           !currentTask.completed,
         );
         setTasks((current) =>
@@ -159,7 +159,7 @@ export const useTasks = (): UseTasksReturn => {
         throw error;
       }
     },
-    [tasks, userId],
+    [tasks, workspaceId],
   );
 
   return {

@@ -2,7 +2,7 @@ import { supabase } from "@/services/supabase";
 import type { Bill, BillUrgency } from "@/types/models";
 
 export type CreateBillInput = {
-  userId: string;
+  workspaceId: string;
   description: string;
   amountCents: number;
   dueDate: string;
@@ -11,11 +11,11 @@ export type CreateBillInput = {
   recurring?: boolean;
 };
 
-export const getBills = async (userId: string): Promise<Bill[]> => {
+export const getBills = async (workspaceId: string): Promise<Bill[]> => {
   const { data, error } = await supabase
     .from("bills")
     .select("*")
-    .eq("user_id", userId)
+    .eq("workspace_id", workspaceId)
     .order("due_date", { ascending: true });
 
   if (error) {
@@ -28,7 +28,7 @@ export const getBills = async (userId: string): Promise<Bill[]> => {
 
   const bills: Bill[] = data.map((row) => ({
     id: row.id as string,
-    userId: row.user_id as string,
+    workspaceId: row.workspace_id as string,
     description: row.description as string,
     amountCents: row.amount_cents as number,
     dueDate: row.due_date as string,
@@ -43,7 +43,7 @@ export const getBills = async (userId: string): Promise<Bill[]> => {
 
 export const createBill = async (input: CreateBillInput): Promise<Bill> => {
   const payload = {
-    user_id: input.userId,
+    workspace_id: input.workspaceId,
     description: input.description,
     amount_cents: input.amountCents,
     due_date: input.dueDate,
@@ -66,7 +66,7 @@ export const createBill = async (input: CreateBillInput): Promise<Bill> => {
 
   const bill: Bill = {
     id: row.id as string,
-    userId: row.user_id as string,
+    workspaceId: row.workspace_id as string,
     description: row.description as string,
     amountCents: row.amount_cents as number,
     dueDate: row.due_date as string,
@@ -81,14 +81,14 @@ export const createBill = async (input: CreateBillInput): Promise<Bill> => {
 
 export const toggleBillPaid = async (
   billId: string,
-  userId: string,
+  workspaceId: string,
   paid: boolean,
 ): Promise<Bill> => {
   const { data, error } = await supabase
     .from("bills")
     .update({ paid })
     .eq("id", billId)
-    .eq("user_id", userId)
+    .eq("workspace_id", workspaceId)
     .select()
     .single();
 
@@ -98,7 +98,7 @@ export const toggleBillPaid = async (
 
   return {
     id: data.id as string,
-    userId: data.user_id as string,
+    workspaceId: data.workspace_id as string,
     description: data.description as string,
     amountCents: data.amount_cents as number,
     dueDate: data.due_date as string,
@@ -111,13 +111,13 @@ export const toggleBillPaid = async (
 
 export const deleteBill = async (
   billId: string,
-  userId: string,
+  workspaceId: string,
 ): Promise<void> => {
   const { error } = await supabase
     .from("bills")
     .delete()
     .eq("id", billId)
-    .eq("user_id", userId);
+    .eq("workspace_id", workspaceId);
 
   if (error) {
     throw new Error(error.message);

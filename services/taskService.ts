@@ -3,7 +3,7 @@ import type { Task } from "@/types/models";
 
 type TaskRow = {
   id: string;
-  user_id: string;
+  workspace_id: string;
   title: string;
   completed: boolean;
   due_date: string | null;
@@ -11,13 +11,13 @@ type TaskRow = {
 };
 
 export type CreateTaskInput = {
-  userId: string;
+  workspaceId: string;
   title: string;
   dueDate?: string | null;
 };
 
 export type UpdateTaskInput = {
-  userId: string;
+  workspaceId: string;
   taskId: string;
   title?: string;
   completed?: boolean;
@@ -27,7 +27,7 @@ export type UpdateTaskInput = {
 const mapTask = (row: TaskRow): Task => {
   return {
     id: row.id,
-    userId: row.user_id,
+    workspaceId: row.workspace_id,
     title: row.title,
     completed: row.completed,
     dueDate: row.due_date,
@@ -35,11 +35,11 @@ const mapTask = (row: TaskRow): Task => {
   };
 };
 
-export const getTasks = async (userId: string): Promise<Task[]> => {
+export const getTasks = async (workspaceId: string): Promise<Task[]> => {
   const { data, error } = await supabase
     .from("tasks")
     .select("*")
-    .eq("user_id", userId)
+    .eq("workspace_id", workspaceId)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -55,7 +55,7 @@ export const getTasks = async (userId: string): Promise<Task[]> => {
 
 export const createTask = async (input: CreateTaskInput): Promise<Task> => {
   const payload = {
-    user_id: input.userId,
+    workspace_id: input.workspaceId,
     title: input.title,
     completed: false,
     due_date: input.dueDate ?? null,
@@ -98,7 +98,7 @@ export const updateTask = async (input: UpdateTaskInput): Promise<Task> => {
     .from("tasks")
     .update(payload)
     .eq("id", input.taskId)
-    .eq("user_id", input.userId)
+    .eq("workspace_id", input.workspaceId)
     .select()
     .single();
 
@@ -111,13 +111,13 @@ export const updateTask = async (input: UpdateTaskInput): Promise<Task> => {
 
 export const deleteTask = async (
   taskId: string,
-  userId: string,
+  workspaceId: string,
 ): Promise<void> => {
   const { error } = await supabase
     .from("tasks")
     .delete()
     .eq("id", taskId)
-    .eq("user_id", userId);
+    .eq("workspace_id", workspaceId);
 
   if (error) {
     throw new Error(error.message);
@@ -126,14 +126,14 @@ export const deleteTask = async (
 
 export const toggleTask = async (
   taskId: string,
-  userId: string,
+  workspaceId: string,
   completed: boolean,
 ): Promise<Task> => {
   const { data, error } = await supabase
     .from("tasks")
     .update({ completed })
     .eq("id", taskId)
-    .eq("user_id", userId)
+    .eq("workspace_id", workspaceId)
     .select()
     .single();
 

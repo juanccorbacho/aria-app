@@ -1,12 +1,6 @@
 import { useMemo, useState } from "react";
-import {
-    ActivityIndicator,
-    Alert,
-    Pressable,
-    ScrollView,
-} from "react-native";
+import { ActivityIndicator, Alert, View, TouchableOpacity, TextInput, Text, FlatList } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { XStack, YStack, Button, Card, Input } from "tamagui";
 
 import { useBills } from "@/hooks/useBills";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
@@ -18,20 +12,14 @@ type FilterStatus = "todas" | "pendentes" | "pagas";
 
 const formatCurrencyBRL = (valueCents: number): string => {
   const value: number = valueCents / 100;
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value);
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 };
 
 const formatDateBR = (isoDate: string): string => {
   const [year, month, day] = isoDate.split("-").map((chunk) => Number(chunk));
   if (!year || !month || !day) return isoDate;
-  const date: Date = new Date(year, month - 1, day);
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-  }).format(date);
+  const date = new Date(year, month - 1, day);
+  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(date);
 };
 
 const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
@@ -44,18 +32,10 @@ const formatDateInput = (value: string): string => {
 };
 
 const isRealIsoDate = (value: string): boolean => {
-  if (!isoDateRegex.test(value)) {
-    return false;
-  }
-
+  if (!isoDateRegex.test(value)) return false;
   const [year, month, day] = value.split("-").map((chunk) => Number(chunk));
   const date = new Date(Date.UTC(year, month - 1, day));
-
-  return (
-    date.getUTCFullYear() === year &&
-    date.getUTCMonth() === month - 1 &&
-    date.getUTCDate() === day
-  );
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 };
 
 const formatAmountInput = (value: string): string => {
@@ -64,35 +44,23 @@ const formatAmountInput = (value: string): string => {
   const [intPart, decPart] = normalized.split(".");
   const safeInt = intPart.replace(/\D/g, "");
   const safeDec = (decPart ?? "").replace(/\D/g, "").slice(0, 2);
-
-  if (safeDec.length > 0) {
-    return `${safeInt || "0"},${safeDec}`;
-  }
-
+  if (safeDec.length > 0) return `${safeInt || "0"},${safeDec}`;
   return safeInt;
 };
 
 const parseAmountToCents = (value: string): number | null => {
   const sanitized = value.replace(/\s/g, "");
-  if (sanitized.length === 0) {
-    return null;
-  }
-
+  if (sanitized.length === 0) return null;
   const normalized = sanitized.replace(/\./g, "").replace(/,/g, ".");
   const parsed = Number(normalized);
-
-  if (Number.isNaN(parsed)) {
-    return null;
-  }
-
+  if (Number.isNaN(parsed)) return null;
   return Math.round(parsed * 100);
 };
 
 export default function BillsScreen(): React.JSX.Element {
   const isDesktop = useIsDesktop();
   const insets = useSafeAreaInsets();
-  const { bills, isLoading, errorMessage, createBill, togglePaid, deleteBill } =
-    useBills();
+  const { bills, isLoading, errorMessage, createBill, togglePaid, deleteBill } = useBills();
 
   const [showForm, setShowForm] = useState<boolean>(false);
   const [filter, setFilter] = useState<FilterStatus>("todas");
@@ -104,38 +72,16 @@ export default function BillsScreen(): React.JSX.Element {
   const [recurring, setRecurring] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const descriptionError = useMemo((): string | null => {
-    return description.trim().length === 0 ? "Descrição é obrigatória" : null;
-  }, [description]);
-
+  const descriptionError = useMemo((): string | null => description.trim().length === 0 ? "Descrição é obrigatória" : null, [description]);
   const amountCents = useMemo(() => parseAmountToCents(amount), [amount]);
-
-  const amountError = useMemo((): string | null => {
-    if (amountCents === null || amountCents <= 0) {
-      return "Valor deve ser maior que zero";
-    }
-    return null;
-  }, [amountCents]);
-
+  const amountError = useMemo((): string | null => (amountCents === null || amountCents <= 0) ? "Valor deve ser maior que zero" : null, [amountCents]);
   const dueDateError = useMemo((): string | null => {
-    if (dueDate.trim().length === 0) {
-      return "Vencimento é obrigatório";
-    }
-
-    if (!isoDateRegex.test(dueDate)) {
-      return "Data inválida. Use o formato AAAA-MM-DD";
-    }
-
-    if (!isRealIsoDate(dueDate)) {
-      return "Data inválida. Use o formato AAAA-MM-DD";
-    }
-
+    if (dueDate.trim().length === 0) return "Vencimento é obrigatório";
+    if (!isoDateRegex.test(dueDate) || !isRealIsoDate(dueDate)) return "Data inválida. Use o formato AAAA-MM-DD";
     return null;
   }, [dueDate]);
 
-  const canSubmit = useMemo((): boolean => {
-    return !descriptionError && !amountError && !dueDateError;
-  }, [descriptionError, amountError, dueDateError]);
+  const canSubmit = useMemo((): boolean => !descriptionError && !amountError && !dueDateError, [descriptionError, amountError, dueDateError]);
 
   const filteredBills = useMemo((): Bill[] => {
     const base = bills.filter((bill) => {
@@ -143,291 +89,201 @@ export default function BillsScreen(): React.JSX.Element {
       if (filter === "pagas") return bill.paid;
       return true;
     });
-
     return [...base].sort((a, b) => {
-      if (a.paid !== b.paid) {
-        return a.paid ? 1 : -1;
-      }
-
+      if (a.paid !== b.paid) return a.paid ? 1 : -1;
       return a.dueDate.localeCompare(b.dueDate);
     });
   }, [bills, filter]);
 
   const handleCreate = async (): Promise<void> => {
-    if (!canSubmit || amountCents === null || isSubmitting) {
-      return;
-    }
-
+    if (!canSubmit || amountCents === null || isSubmitting) return;
     setIsSubmitting(true);
     try {
       await createBill({
-        description: description.trim(),
-        amountCents,
-        dueDate,
-        urgency,
-        paid,
-        recurring,
+        description: description.trim(), amountCents, dueDate, urgency, paid, recurring,
       });
-      setDescription("");
-      setAmount("");
-      setDueDate("");
-      setUrgency("medio");
-      setPaid(false);
-      setRecurring(false);
-      setShowForm(false);
+      handleCancel();
     } catch (error: unknown) {
-      Alert.alert(
-        "Erro ao criar conta",
-        error instanceof Error ? error.message : "Tente novamente.",
-      );
+      Alert.alert("Erro ao criar conta", error instanceof Error ? error.message : "Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleCancel = (): void => {
-    setDescription("");
-    setAmount("");
-    setDueDate("");
-    setUrgency("medio");
-    setPaid(false);
-    setRecurring(false);
-    setShowForm(false);
+    setDescription(""); setAmount(""); setDueDate(""); setUrgency("medio"); setPaid(false); setRecurring(false); setShowForm(false);
   };
 
   const handleDelete = (bill: Bill): void => {
     Alert.alert("Excluir conta", "Tem certeza que deseja excluir esta conta?", [
       { text: "Cancelar", style: "cancel" },
-      {
-        text: "Excluir",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await deleteBill(bill.id);
-          } catch (error: unknown) {
-            Alert.alert(
-              "Erro ao excluir conta",
-              error instanceof Error ? error.message : "Tente novamente.",
-            );
-          }
+      { text: "Excluir", style: "destructive", onPress: async () => {
+          try { await deleteBill(bill.id); } 
+          catch (error: unknown) { Alert.alert("Erro ao excluir conta", error instanceof Error ? error.message : "Tente novamente."); }
         },
       },
     ]);
   };
 
   const handleTogglePaid = async (bill: Bill): Promise<void> => {
-    try {
-      await togglePaid(bill.id);
-    } catch (error: unknown) {
-      Alert.alert(
-        "Erro ao atualizar conta",
-        error instanceof Error ? error.message : "Tente novamente.",
-      );
-    }
+    try { await togglePaid(bill.id); } 
+    catch (error: unknown) { Alert.alert("Erro", error instanceof Error ? error.message : "Tente novamente."); }
   };
 
   if (isLoading) {
     return (
-      <ThemedView f={1} ai="center" jc="center">
-        <ActivityIndicator size="large" color="#000000" />
+      <ThemedView className="flex-1 items-center justify-center bg-[#08090a]">
+        <ActivityIndicator size="large" color="#f7f8f8" />
       </ThemedView>
     );
   }
 
   if (errorMessage) {
     return (
-      <ThemedView f={1} ai="center" jc="center">
-        <ThemedText color="$danger">{errorMessage}</ThemedText>
+      <ThemedView className="flex-1 items-center justify-center bg-[#08090a]">
+        <ThemedText className="text-[#ef4444] font-[590]">{errorMessage}</ThemedText>
       </ThemedView>
     );
   }
 
-  return (
-    <ThemedView f={1}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 28 }}
-      >
-        <YStack gap="$5" w="100%" maxWidth={isDesktop ? "100%" : 720} als="center">
-          
-          <XStack ai="center" jc="space-between" gap="$4">
-            <YStack gap="$1">
-              <ThemedText type="title" fontSize="$7">Contas a pagar</ThemedText>
-              <ThemedText type="default" o={0.6}>Acompanhe vencimentos e pagamentos.</ThemedText>
-            </YStack>
-            {isDesktop && !showForm ? (
-              <Button onPress={() => setShowForm(true)} bg="$buttonBg" color="$buttonColor" br="$pill">
-                Nova conta
-              </Button>
-            ) : null}
-          </XStack>
+  const containerStyle = { maxWidth: isDesktop ? "100%" as const : 720 };
 
-          <XStack gap="$3">
-            {["todas", "pendentes", "pagas"].map((value) => {
-              const label = value === "todas" ? "Todas" : value === "pendentes" ? "Pendentes" : "Pagas";
-              const active = filter === value;
+  const renderHeader = () => (
+    <View className="flex col gap-5 mb-5">
+      <View className="flex flex-row items-center justify-between gap-4">
+        <View className="flex flex-col gap-1">
+          <ThemedText type="title" className="text-2xl font-[590] text-[#f7f8f8] tracking-tight">Contas a pagar</ThemedText>
+          <ThemedText className="text-[#d0d6e0] font-[400]">Acompanhe vencimentos e pagamentos.</ThemedText>
+        </View>
+        {isDesktop && !showForm ? (
+          <TouchableOpacity onPress={() => setShowForm(true)} className="bg-[#5e6ad2] px-5 py-3 rounded-full border-[0.5px] border-[#5e6ad2]/80">
+            <Text className="text-[#f7f8f8] font-[510]">Nova conta</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
+      <View className="flex flex-row gap-3">
+        {["todas", "pendentes", "pagas"].map((value) => {
+          const label = value === "todas" ? "Todas" : value === "pendentes" ? "Pendentes" : "Pagas";
+          const active = filter === value;
+          return (
+            <TouchableOpacity
+              key={value}
+              onPress={() => setFilter(value as FilterStatus)}
+              className={`flex-1 py-3 items-center rounded-full border-[0.5px] ${active ? "bg-white/10 border-white/20" : "border-white/5 bg-[#191a1b]"}`}
+            >
+              <Text className={`font-[510] ${active ? "text-[#f7f8f8]" : "text-[#d0d6e0]"}`}>{label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {showForm && (
+        <View className="bg-[#191a1b] border-[0.5px] border-white/10 rounded-2xl p-5 flex flex-col gap-4">
+          <TextInput value={description} onChangeText={setDescription} placeholder="Descrição" placeholderTextColor="#d0d6e0" className="bg-white/5 border-[0.5px] border-white/10 text-[#f7f8f8] rounded-xl p-4 font-[400]" />
+          {descriptionError && <ThemedText className="text-[#ef4444] text-xs font-[510]">{descriptionError}</ThemedText>}
+
+          <TextInput value={amount} onChangeText={(value) => setAmount(formatAmountInput(value))} placeholder="Valor (R$)" placeholderTextColor="#d0d6e0" keyboardType="decimal-pad" className="bg-white/5 border-[0.5px] border-white/10 text-[#f7f8f8] rounded-xl p-4 font-[400]" />
+          {amountError && <ThemedText className="text-[#ef4444] text-xs font-[510]">{amountError}</ThemedText>}
+
+          <TextInput value={dueDate} onChangeText={(value) => setDueDate(formatDateInput(value))} placeholder="Vencimento (AAAA-MM-DD)" placeholderTextColor="#d0d6e0" autoCapitalize="none" autoCorrect={false} maxLength={10} keyboardType="numbers-and-punctuation" className="bg-white/5 border-[0.5px] border-white/10 text-[#f7f8f8] rounded-xl p-4 font-[400]" />
+          {dueDateError && <ThemedText className="text-[#ef4444] text-xs font-[510]">{dueDateError}</ThemedText>}
+
+          <View className="flex flex-row gap-3">
+            {["alto", "medio", "baixo"].map((value) => {
+              const label = value === "alto" ? "Alto" : value === "medio" ? "Médio" : "Baixo";
+              const active = urgency === value;
               return (
-                <Button
+                <TouchableOpacity
                   key={value}
-                  onPress={() => setFilter(value as FilterStatus)}
-                  f={1}
-                  br="$comfortable"
-                  bg={active ? "$success" : "$cardBackground"}
-                  color={active ? "$pureBlack" : "$color"}
-                  bw={1}
-                  borderColor={active ? "$success" : "$cardBorder"}
+                  onPress={() => setUrgency(value as BillUrgency)}
+                  className={`flex-1 py-3 items-center rounded-full border-[0.5px] ${active ? "bg-white/10 border-white/20" : "border-white/5"}`}
                 >
-                  <ThemedText type="defaultSemiBold" color={active ? "$pureBlack" : "$color"}>{label}</ThemedText>
-                </Button>
+                  <Text className={`font-[510] ${active ? "text-[#f7f8f8]" : "text-[#d0d6e0]"}`}>{label}</Text>
+                </TouchableOpacity>
               );
             })}
-          </XStack>
+          </View>
 
-          {showForm && (
-            <Card bg="$cardBackground" br="$comfortable" p="$5" bw={1} bc="$cardBorder" gap="$4">
-              <Input
-                value={description}
-                onChangeText={setDescription}
-                placeholder="Descrição"
-                bg="transparent"
-                color="$color"
-                br="$comfortable"
-                bw={1}
-                borderColor="$cardBorder"
-              />
-              {descriptionError && <ThemedText color="$danger" fontSize={12}>{descriptionError}</ThemedText>}
+          <View className="flex flex-row items-center gap-3">
+            <TouchableOpacity onPress={() => setPaid((c) => !c)} className={`w-6 h-6 items-center justify-center rounded-md border-[0.5px] ${paid ? "bg-[#5e6ad2] border-[#5e6ad2]/80" : "border-white/20"}`}>
+              {paid && <Text className="text-[#f7f8f8] font-[590] text-xs">✓</Text>}
+            </TouchableOpacity>
+            <ThemedText className="font-[510] text-[#f7f8f8]">Pago</ThemedText>
+          </View>
 
-              <Input
-                value={amount}
-                onChangeText={(value) => setAmount(formatAmountInput(value))}
-                placeholder="Valor (R$)"
-                keyboardType="decimal-pad"
-                bg="transparent"
-                color="$color"
-                br="$comfortable"
-                bw={1}
-                borderColor="$cardBorder"
-              />
-              {amountError && <ThemedText color="$danger" fontSize={12}>{amountError}</ThemedText>}
+          <View className="flex flex-row items-center gap-3">
+            <TouchableOpacity onPress={() => setRecurring((c) => !c)} className={`w-6 h-6 items-center justify-center rounded-md border-[0.5px] ${recurring ? "bg-[#5e6ad2] border-[#5e6ad2]/80" : "border-white/20"}`}>
+              {recurring && <Text className="text-[#f7f8f8] font-[590] text-xs">✓</Text>}
+            </TouchableOpacity>
+            <ThemedText className="font-[510] text-[#f7f8f8]">Recorrente</ThemedText>
+          </View>
 
-              <Input
-                value={dueDate}
-                onChangeText={(value) => setDueDate(formatDateInput(value))}
-                placeholder="Vencimento (AAAA-MM-DD)"
-                autoCapitalize="none"
-                autoCorrect={false}
-                maxLength={10}
-                keyboardType="numbers-and-punctuation"
-                bg="transparent"
-                color="$color"
-                br="$comfortable"
-                bw={1}
-                borderColor="$cardBorder"
-              />
-              {dueDateError && <ThemedText color="$danger" fontSize={12}>{dueDateError}</ThemedText>}
+          <View className="flex flex-col gap-3 mt-3">
+            <TouchableOpacity onPress={handleCreate} disabled={!canSubmit || isSubmitting} className={`items-center py-3 rounded-full border-[0.5px] border-[#5e6ad2]/80 bg-[#5e6ad2] ${(!canSubmit || isSubmitting) ? "opacity-50" : ""}`}>
+              <Text className="text-[#f7f8f8] font-[510]">Adicionar conta</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleCancel} className="items-center py-3 rounded-full border-[0.5px] border-white/10 bg-white/5">
+              <Text className="text-[#f7f8f8] font-[510]">Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+    </View>
+  );
 
-              <XStack gap="$3">
-                {["alto", "medio", "baixo"].map((value) => {
-                  const label = value === "alto" ? "Alto" : value === "medio" ? "Médio" : "Baixo";
-                  const active = urgency === value;
-                  return (
-                    <Button
-                      key={value}
-                      onPress={() => setUrgency(value as BillUrgency)}
-                      f={1}
-                      br="$comfortable"
-                      bg={active ? "$success" : "transparent"}
-                      bw={1}
-                      borderColor={active ? "$success" : "$cardBorder"}
-                    >
-                      <ThemedText color={active ? "$pureBlack" : "$color"} type="defaultSemiBold">{label}</ThemedText>
-                    </Button>
-                  );
-                })}
-              </XStack>
+  return (
+    <ThemedView className="flex-1 bg-[#08090a]">
+      <View className="flex-1 w-full self-center px-6 pt-8 pb-12" style={containerStyle}>
+        <FlatList
+          data={filteredBills}
+          keyExtractor={(b) => b.id}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={renderHeader}
+          ListEmptyComponent={
+            <View className="bg-[#191a1b] rounded-2xl px-4 py-8 border-[0.5px] border-white/10 items-center">
+              <ThemedText className="text-center text-[#d0d6e0] font-[400]">Nenhuma conta cadastrada.</ThemedText>
+            </View>
+          }
+          renderItem={({ item: bill, index }) => {
+            const urgencyColorClass = bill.urgency === "alto" ? "text-[#ef4444]" : bill.urgency === "medio" ? "text-[#facc15]" : "text-[#10b981]";
+            const urgencyBgClass = bill.urgency === "alto" ? "bg-[#ef4444]/10 border-[#ef4444]/30" : bill.urgency === "medio" ? "bg-[#facc15]/10 border-[#facc15]/30" : "bg-[#10b981]/10 border-[#10b981]/30";
 
-              <XStack ai="center" gap="$3">
-                <Pressable
-                  onPress={() => setPaid((c) => !c)}
-                  style={{ width: 24, height: 24, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center', borderColor: paid ? '#2EEA8A' : '#3A3A3A', backgroundColor: paid ? '#2EEA8A' : 'transparent' }}
-                >
-                  {paid && <Text style={{ color: '#000', fontWeight: 'bold' }}>✓</Text>}
-                </Pressable>
-                <ThemedText type="defaultSemiBold">Pago</ThemedText>
-              </XStack>
+            return (
+              <View className={`bg-[#191a1b] px-4 flex flex-row items-center gap-4 py-4 border-x-[0.5px] border-white/10 ${index === 0 ? 'rounded-t-2xl border-t-[0.5px]' : ''} ${index === filteredBills.length - 1 ? 'rounded-b-2xl border-b-[0.5px]' : 'border-b-[0.5px]'}`}>
+                <TouchableOpacity onPress={() => handleTogglePaid(bill)} className={`w-6 h-6 items-center justify-center rounded-md border-[0.5px] ${bill.paid ? "bg-[#10b981] border-[#10b981]/80" : "border-white/20"}`}>
+                  {bill.paid && <Text className="text-[#f7f8f8] font-[590] text-xs">✓</Text>}
+                </TouchableOpacity>
 
-              <XStack ai="center" gap="$3">
-                <Pressable
-                  onPress={() => setRecurring((c) => !c)}
-                  style={{ width: 24, height: 24, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center', borderColor: recurring ? '#2EEA8A' : '#3A3A3A', backgroundColor: recurring ? '#2EEA8A' : 'transparent' }}
-                >
-                  {recurring && <Text style={{ color: '#000', fontWeight: 'bold' }}>✓</Text>}
-        </Pressable>
-                <ThemedText type="defaultSemiBold">Recorrente</ThemedText>
-              </XStack>
+                <View className="flex-1 flex col gap-1">
+                  <ThemedText className="font-[510] text-[#f7f8f8]">{bill.description}</ThemedText>
+                  <ThemedText className="text-xs text-[#d0d6e0] font-[400]">Vence em {formatDateBR(bill.dueDate)}</ThemedText>
+                  <View className={`self-start mt-1 border-[0.5px] px-2 py-1 rounded-full ${urgencyBgClass}`}>
+                    <ThemedText type="monoLabel" className={`text-[10px] tracking-widest ${urgencyColorClass}`}>{bill.urgency.toUpperCase()}</ThemedText>
+                  </View>
+                </View>
 
-              <YStack gap="$3" mt="$3">
-                <Button onPress={handleCreate} disabled={!canSubmit || isSubmitting} opacity={(!canSubmit || isSubmitting) ? 0.5 : 1} bg="$success" br="$comfortable" color="$pureBlack">
-                  Adicionar conta
-                </Button>
-                <Button onPress={handleCancel} bg="transparent" br="$comfortable" bw={1} borderColor="$cardBorder">
-                  Cancelar
-                </Button>
-              </YStack>
-            </Card>
-          )}
-
-          <Card bg="$cardBackground" br="$comfortable" px="$4" py="$2" bw={1} bc="$cardBorder">
-            {filteredBills.length === 0 ? (
-              <ThemedText ta="center" py="$5" o={0.6}>Nenhuma conta cadastrada.</ThemedText>
-            ) : (
-              filteredBills.map((bill, index) => {
-                const urgencyColor = bill.urgency === "alto" ? "$danger" : bill.urgency === "medio" ? "$warning" : "$success";
-
-                return (
-                  <XStack key={bill.id} ai="center" gap="$4" py="$4" borderBottomWidth={index === filteredBills.length - 1 ? 0 : 1} borderBottomColor="$cardBorder">
-                    <Pressable
-                  onPress={() => handleTogglePaid(bill)}
-                  style={{ width: 24, height: 24, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center', borderColor: bill.paid ? '#2EEA8A' : '#3A3A3A', backgroundColor: bill.paid ? '#2EEA8A' : 'transparent' }}
-                >
-                  {bill.paid && <Text style={{ color: '#000', fontWeight: 'bold' }}>✓</Text>}
-                </Pressable>
-
-                    <YStack f={1} gap="$1">
-                      <ThemedText type="defaultSemiBold">{bill.description}</ThemedText>
-                      <ThemedText type="default" fontSize={12} o={0.6}>Vence em {formatDateBR(bill.dueDate)}</ThemedText>
-                      <XStack bg={urgencyColor} px="$2" py="$1" br="$pill" als="flex-start" mt="$1">
-                        <ThemedText type="monoLabel" fontSize={10} color="$pureBlack">{bill.urgency}</ThemedText>
-                      </XStack>
-                    </YStack>
-
-                    <YStack ai="flex-end" gap="$2">
-                      <ThemedText type="defaultSemiBold">{formatCurrencyBRL(bill.amountCents)}</ThemedText>
-                      <ThemedText type="default" fontSize={12} o={0.6}>{bill.paid ? "Pago" : "Pendente"}</ThemedText>
-                      <Button onPress={() => handleDelete(bill)} bg="transparent" bw={1} borderColor="$cardBorder" size="$2" br="$comfortable" color="$danger">
-                        Excluir
-                      </Button>
-                    </YStack>
-                  </XStack>
-                );
-              })
-            )}
-          </Card>
-        </YStack>
-      </ScrollView>
+                <View className="items-end gap-2">
+                  <ThemedText className="font-[590] tracking-tight text-[#f7f8f8]">{formatCurrencyBRL(bill.amountCents)}</ThemedText>
+                  <ThemedText className="text-xs text-[#d0d6e0] font-[400]">{bill.paid ? "Pago" : "Pendente"}</ThemedText>
+                  <TouchableOpacity onPress={() => handleDelete(bill)} className="border-[0.5px] border-white/10 bg-white/5 rounded-full px-3 py-1">
+                    <Text className="text-[#f7f8f8] text-[10px] font-[510]">Excluir</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            );
+          }}
+        />
+      </View>
 
       {!isDesktop && !showForm && (
-        <Button
-          pos="absolute"
-          right={20}
-          bottom={24 + insets.bottom}
-          bg="$buttonBg"
-          color="$buttonColor"
-          br="$comfortable"
+        <TouchableOpacity
           onPress={() => setShowForm(true)}
+          className="absolute right-5 bg-[#5e6ad2] rounded-full px-5 py-3 border-[0.5px] border-[#5e6ad2]/80"
+          style={{ bottom: 24 + insets.bottom }}
         >
-          Nova conta
-        </Button>
+          <Text className="text-[#f7f8f8] font-[510]">Nova conta</Text>
+        </TouchableOpacity>
       )}
     </ThemedView>
   );

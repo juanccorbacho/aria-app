@@ -2,7 +2,7 @@ import { supabase } from "@/services/supabase";
 import type { Transaction, TransactionType } from "@/types/models";
 
 export type CreateTransactionInput = {
-  userId: string;
+  workspaceId: string;
   description: string;
   category?: string | null;
   amountCents: number;
@@ -11,7 +11,7 @@ export type CreateTransactionInput = {
 };
 
 export type UpdateTransactionInput = {
-  userId: string;
+  workspaceId: string;
   transactionId: string;
   description?: string;
   category?: string | null;
@@ -21,12 +21,12 @@ export type UpdateTransactionInput = {
 };
 
 export const getTransactions = async (
-  userId: string,
+  workspaceId: string,
 ): Promise<Transaction[]> => {
   const { data, error } = await supabase
     .from("transactions")
     .select("*")
-    .eq("user_id", userId)
+    .eq("workspace_id", workspaceId)
     .order("date", { ascending: false });
 
   if (error) {
@@ -39,7 +39,7 @@ export const getTransactions = async (
 
   const transactions: Transaction[] = data.map((row) => ({
     id: row.id as string,
-    userId: row.user_id as string,
+    workspaceId: row.workspace_id as string,
     description: row.description as string,
     category: (row.category as string | null) ?? null,
     amountCents: row.amount_cents as number,
@@ -55,7 +55,7 @@ export const createTransaction = async (
   input: CreateTransactionInput,
 ): Promise<Transaction> => {
   const payload = {
-    user_id: input.userId,
+    workspace_id: input.workspaceId,
     description: input.description,
     category: input.category ?? null,
     amount_cents: input.amountCents,
@@ -77,7 +77,7 @@ export const createTransaction = async (
 
   const transaction: Transaction = {
     id: row.id as string,
-    userId: row.user_id as string,
+    workspaceId: row.workspace_id as string,
     description: row.description as string,
     category: (row.category as string | null) ?? null,
     amountCents: row.amount_cents as number,
@@ -128,7 +128,7 @@ export const updateTransaction = async (
     .from("transactions")
     .update(payload)
     .eq("id", input.transactionId)
-    .eq("user_id", input.userId)
+    .eq("workspace_id", input.workspaceId)
     .select()
     .single();
 
@@ -138,7 +138,7 @@ export const updateTransaction = async (
 
   return {
     id: data.id as string,
-    userId: data.user_id as string,
+    workspaceId: data.workspace_id as string,
     description: data.description as string,
     category: (data.category as string | null) ?? null,
     amountCents: data.amount_cents as number,
@@ -150,13 +150,13 @@ export const updateTransaction = async (
 
 export const deleteTransaction = async (
   transactionId: string,
-  userId: string,
+  workspaceId: string,
 ): Promise<void> => {
   const { error } = await supabase
     .from("transactions")
     .delete()
     .eq("id", transactionId)
-    .eq("user_id", userId);
+    .eq("workspace_id", workspaceId);
 
   if (error) {
     throw new Error(error.message);

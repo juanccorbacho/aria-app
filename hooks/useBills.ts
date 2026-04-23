@@ -15,14 +15,14 @@ type UseBillsReturn = {
   isLoading: boolean;
   errorMessage: string | null;
   refresh: () => void;
-  createBill: (input: Omit<CreateBillInput, "userId">) => Promise<void>;
+  createBill: (input: Omit<CreateBillInput, "workspaceId">) => Promise<void>;
   togglePaid: (billId: string) => Promise<void>;
   deleteBill: (billId: string) => Promise<void>;
 };
 
 export const useBills = (): UseBillsReturn => {
   const { user } = useAuth();
-  const userId: string | undefined = user?.id;
+  const workspaceId: string | undefined = user?.user_metadata?.workspace_id;
 
   const [bills, setBills] = useState<Bill[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -35,7 +35,7 @@ export const useBills = (): UseBillsReturn => {
 
   useEffect(() => {
     const run = async (): Promise<void> => {
-      if (!userId) {
+      if (!workspaceId) {
         setIsLoading(false);
         setErrorMessage("Usuário não autenticado.");
         return;
@@ -45,7 +45,7 @@ export const useBills = (): UseBillsReturn => {
       setErrorMessage(null);
 
       try {
-        const data = await getBills(userId);
+        const data = await getBills(workspaceId);
         setBills(data);
         setIsLoading(false);
       } catch (error: unknown) {
@@ -57,18 +57,18 @@ export const useBills = (): UseBillsReturn => {
     };
 
     void run();
-  }, [userId, refreshTick]);
+  }, [workspaceId, refreshTick]);
 
   const createBill = useCallback(
-    async (input: Omit<CreateBillInput, "userId">): Promise<void> => {
-      if (!userId) {
+    async (input: Omit<CreateBillInput, "workspaceId">): Promise<void> => {
+      if (!workspaceId) {
         setErrorMessage("Usuário não autenticado.");
         throw new Error("Usuário não autenticado.");
       }
 
       try {
         const created = await createBillService({
-          userId,
+          workspaceId,
           description: input.description,
           amountCents: input.amountCents,
           dueDate: input.dueDate,
@@ -84,12 +84,12 @@ export const useBills = (): UseBillsReturn => {
         throw error;
       }
     },
-    [userId],
+    [workspaceId],
   );
 
   const togglePaid = useCallback(
     async (billId: string): Promise<void> => {
-      if (!userId) {
+      if (!workspaceId) {
         setErrorMessage("Usuário não autenticado.");
         throw new Error("Usuário não autenticado.");
       }
@@ -102,7 +102,7 @@ export const useBills = (): UseBillsReturn => {
       try {
         const updated = await toggleBillPaidService(
           billId,
-          userId,
+          workspaceId,
           !currentBill.paid,
         );
         setBills((current) =>
@@ -115,18 +115,18 @@ export const useBills = (): UseBillsReturn => {
         throw error;
       }
     },
-    [bills, userId],
+    [bills, workspaceId],
   );
 
   const deleteBill = useCallback(
     async (billId: string): Promise<void> => {
-      if (!userId) {
+      if (!workspaceId) {
         setErrorMessage("Usuário não autenticado.");
         throw new Error("Usuário não autenticado.");
       }
 
       try {
-        await deleteBillService(billId, userId);
+        await deleteBillService(billId, workspaceId);
         setBills((current) => current.filter((bill) => bill.id !== billId));
       } catch (error: unknown) {
         setErrorMessage(
@@ -135,7 +135,7 @@ export const useBills = (): UseBillsReturn => {
         throw error;
       }
     },
-    [userId],
+    [workspaceId],
   );
 
   return {
